@@ -1,9 +1,9 @@
-## Welcome to Umile API
+# Welcome to Umile API
 
-# Requirements:
+## Requirements:
 PostgresDB, pgAdmin4, npm + NodeJS 
 
-# Things to do before use:
+## Things to do before use:
 1. Create `umile` database in Postgres
 2. Create tables if not already. Run `create.sql` file in client (pgAdmin4)
 3. Run `npm install`
