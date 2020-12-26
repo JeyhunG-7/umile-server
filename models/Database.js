@@ -15,8 +15,8 @@ const _pgSettings = {
  * read, update, insert, delete operations
  * 
  * Examples:
- * const incubateResult = await DB.incubate('SELECT * FROM admins');
- * const builderResult = await DB.builder().select().from('admins');
+ * const incubateResult = await incubate('SELECT * FROM admins');
+ * const builderResult = await builder().select().from('admins');
  * 
  */
 const knex = require('knex')({

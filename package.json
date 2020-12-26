@@ -9,6 +9,7 @@
     "express": "^4.17.1",
     "knex": "^0.21.14",
     "pg": "^8.5.1",
-    "simple-node-logger": "^18.12.24"
+    "simple-node-logger": "^18.12.24",
+    "validator": "^13.5.2"
   }
 }

@@ -1,8 +1,5 @@
 require('dotenv').config({ path: '.env' });
 
-//initiate global models
-global.DB = require('./models/Database');
-
 const port = process.env.PORT;
 
 const app = require('express')();
