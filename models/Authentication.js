@@ -5,8 +5,7 @@ var jwt = require('jsonwebtoken');
 const LocalStrategy = require('passport-local');
 const {v4: uuidv4 } = require('uuid');
 const { findAdminByEmail } = require('./Admin');
-const { addTokenId, findTokenId, removeTokenId } = require('./Token');
-
+const { addTokenId, findTokenId, removeTokenId, createToken } = require('./Token');
 const jwt_secret = process.env.JWT_SECRET;
 
 var opts = {
@@ -57,11 +56,7 @@ passport.use('admin-local', new LocalStrategy({
       id: id
     }
 
-    var token = jwt.sign(payload, jwt_secret, 
-      {
-        algorithm: 'HS256',
-        expiresIn: "2h"
-      });
+    var token = createToken(payload);
     
     try {
       var results = await addTokenId(id);

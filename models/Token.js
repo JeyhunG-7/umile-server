@@ -1,4 +1,6 @@
 const { builder, TABLES } = require('./Database');
+var jwt = require('jsonwebtoken');
+const jwt_secret = process.env.JWT_SECRET;
 
 exports.addTokenId = function(id){
     return new Promise((resolve, reject) => {
@@ -29,4 +31,18 @@ exports.removeTokenId = function(id){
         .then(resolve)
         .catch(reject)
     });
+}
+
+exports.createToken = function(payload, expire){
+    var options = { algorithm: 'HS256' };
+
+    if (expire){
+        options.expiresIn = expire;
+    }
+
+    return jwt.sign(payload, jwt_secret, options);
+}
+
+exports.decodeToken = function(token){
+    return jwt.decode(token, jwt_secret);
 }
