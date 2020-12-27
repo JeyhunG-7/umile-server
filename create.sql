@@ -5,3 +5,7 @@ CREATE TABLE admins (
     email       TEXT    NOT NULL,
     pwd_hash    TEXT    NOT NULL
 );
+
+CREATE TABLE auth (
+    token_id       TEXT  PRIMARY KEY
+);

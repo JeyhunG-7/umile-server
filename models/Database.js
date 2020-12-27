@@ -9,6 +9,11 @@ const _pgSettings = {
     password: process.env.DB_PASS,
 };
 
+const TABLES = {
+    admins: 'admins',
+    auth: 'auth'
+}
+
 /**
  * http://knexjs.org/
  * Will be used for simple queries for
@@ -57,7 +62,7 @@ const incubate = async (query, { params = undefined, rowCount = -1 } = {}) => {
     return false;
 }
 
-module.exports = { incubate, builder }
+module.exports = { incubate, builder, TABLES }
 
 const connectToDb = async (database) => {
     let connection;

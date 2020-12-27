@@ -5,12 +5,14 @@ const port = process.env.PORT;
 const app = require('express')();
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const password = require('./models/Authentication').passport;
 
 // Express middlewares
 app.use(
   cors(),
   bodyParser.urlencoded({ extended: false }),
-  bodyParser.json()
+  bodyParser.json(),
+  password.initialize()
 );
 
 //API endpoints
