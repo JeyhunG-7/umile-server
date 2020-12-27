@@ -20,4 +20,6 @@ DB_SCHEMA='public'
 DB_USER=''
 DB_PASS=''
 
+JWT_SECRET=secret
+
 ```
