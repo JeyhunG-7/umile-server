@@ -49,14 +49,19 @@ router.post('/signup', async function (req, res) {
 
 router.post('/validate', function (req, res) {
   const validateError = Validator.verifyParams(req.body, { token: 'string' });
-  if (validateError) return Logger.sendError(req, res, 'Request is missing params!', validateError);    
-
+  if (validateError) return Logger.sendError(req, res, 'Request is missing params!', validateError);
+  
   return isTokenValid(req.body.token) ? Logger.sendSuccess(req, res) : Logger.sendError(req, res);
 });
 
 function isTokenValid(token){
-  var payload = decodeToken(token);
-  return payload;
+  try{
+    var payload = decodeToken(token);
+    return payload;
+  } catch(e){
+    return false;
+  }
+  
 }
 
 module.exports = router;
