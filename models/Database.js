@@ -10,8 +10,9 @@ const _pgSettings = {
 };
 
 const TABLES = {
-    admins: 'admins',
-    auth: 'auth'
+    admins:     'admins',
+    auth:       'auth',
+    clients:    'clients'
 }
 
 /**
