@@ -1,4 +1,4 @@
-const { builder, TABLES } = require("./Database");
+const { builder, TABLES } = require("./../helpers/Database");
 
 
 exports.addClientAsync = function(email, first_name, last_name, company_name, phone, pwd_hash) {

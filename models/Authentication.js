@@ -5,7 +5,7 @@ var jwt = require('jsonwebtoken');
 const LocalStrategy = require('passport-local');
 const {v4: uuidv4 } = require('uuid');
 const { findAdminByEmail } = require('./Admin');
-const { addTokenId, findTokenId, removeTokenId, createToken } = require('./Token');
+const { addTokenId, findTokenId, removeTokenId, createToken } = require('../helpers/Token');
 const jwt_secret = process.env.JWT_SECRET;
 
 var opts = {

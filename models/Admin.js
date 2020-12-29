@@ -1,4 +1,4 @@
-const { builder, TABLES } = require("./Database");
+const { builder, TABLES } = require("./../helpers/Database");
 
 
 exports.findAdminByEmail = function(email) {
