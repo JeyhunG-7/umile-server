@@ -1,9 +1,9 @@
 const router = require('express').Router();
 const ResponseBuilder = require('../helpers/ResponseBuilder');
 const Validator = require('../helpers/Validator');
-const { decodeToken } = require('../helpers/Token');
+const { decodeToken, createToken } = require('../helpers/Token');
 const Password = require('../helpers/Password');
-const { addClientAsync, updatePasswordForClientAsync } = require('../models/Client');
+const { addClientAsync, updatePasswordForClientAsync, findClientByEmail } = require('../models/Client');
 const password = require('../models/Authentication').passport,
     { logout, authenticationWith } = require('../models/Authentication');
 
@@ -94,6 +94,31 @@ router.post('/forgotpassword', async function (req, res) {
     }
 
     return ResponseBuilder.sendSuccess(req, res, "Password was successfully reset");
+});
+
+router.get('/forgotpassword', async function (req, res) {
+    const validateError = Validator.verifyParams(req.body, {
+        email:   'email',
+    });
+    if (validateError) return ResponseBuilder.sendError(req, res, 'Request is missing params!', validateError);
+
+    const { email } = req.body;
+
+    try{
+        var result = await findClientByEmail(email);
+        if (result.length !== 1) {
+            return ResponseBuilder.sendSuccess(req, res);
+        }
+    } catch (e){
+        logger.error(`Error while getting client by email : ${JSON.stringify(e)}`);
+        return ResponseBuilder.sendSuccess(req, res);
+    }
+
+    var token = createToken({email: email}, '30m');
+    
+    //TODO: send email with link to reset password
+    
+    return ResponseBuilder.sendSuccess(req, res, {token: token});
 });
 
 function isTokenValid(token) {

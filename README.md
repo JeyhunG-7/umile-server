@@ -22,4 +22,6 @@ DB_PASS=''
 
 JWT_SECRET=secret
 
+SENDGRID_API_KEY=YOUR_API_KEY
+
 ```
