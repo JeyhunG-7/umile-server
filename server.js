@@ -2,6 +2,8 @@ require('dotenv').config({ path: '.env' });
 
 const port = process.env.PORT;
 
+const { expressLogger } = require('./helpers/Logger');
+
 const app = require('express')();
 const bodyParser = require('body-parser');
 const cors = require('cors');
@@ -14,6 +16,9 @@ app.use(
   bodyParser.json(),
   password.initialize()
 );
+
+// Logger
+app.use(expressLogger);
 
 //API endpoints
 app.use(`/api/`, require('./api/init'));

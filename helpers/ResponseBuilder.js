@@ -1,9 +1,10 @@
+const { Log } = require('./Logger'),
+        logger = new Log('ResponseBuilder');
+
 function sendSuccess(req, res, data = {}) {
     const responseObject = { success: true, data }
 
-    console.debug('API success => ', req.originalUrl);
-
-    //TODO: save to permanent log as well
+    logger.debug('API success => ', req.originalUrl);
 
     return res.send(responseObject);
 }
@@ -11,9 +12,7 @@ function sendSuccess(req, res, data = {}) {
 function sendError(req, res, message = 'Error!', devMessage = 'No dev message', data = {}) {
     const responseObject = { success: false, data, message, devMessage }
 
-    console.error('API error => ', req.originalUrl, message, devMessage);
-
-    //TODO: save to permanent log as well
+    logger.error('API error => ', req.originalUrl, message, devMessage);
 
     return res.send(responseObject);
 }
