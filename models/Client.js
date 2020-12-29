@@ -21,3 +21,14 @@ exports.findClientByEmail = function(email) {
             .catch(reject);
     });
 }
+
+exports.updatePasswordForClientAsync = function(email, pwd_hash) {
+    return new Promise((resolve, reject) => {
+        builder()
+            .table(TABLES.clients)
+            .where({email: email})
+            .update({pwd_hash: pwd_hash})
+            .then(resolve)
+            .catch(reject);
+    });
+}
