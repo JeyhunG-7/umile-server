@@ -1,21 +1,20 @@
 const router = require('express').Router();
 const ResponseBuilder = require('../helpers/ResponseBuilder');
-const password = require('../models/Authentication').passport,
-    { logout } = require('../models/Authentication');
+const { logout, authenticationWith } = require('../models/Authentication');
 const Validator = require('../helpers/Validator');
 const { createToken } = require('../helpers/Token');
 
 
-router.post('/login', password.authenticate('admin-local', { session: false }), function (req, res) {
+router.post('/login', authenticationWith('admin-local'), function (req, res) {
     return ResponseBuilder.sendSuccess(req, res, req.user.token);
 });
 
-router.post('/logout', password.authenticate('admin-jwt', { session: false }), async function (req, res) {
+router.post('/logout', authenticationWith('jwt'), async function (req, res) {
     await logout(req.user.id);
     return ResponseBuilder.sendSuccess(req, res);
 });
 
-router.post('/createinvitation', password.authenticate('admin-jwt', { session: false, failureRedirect: "/" }), async function (req, res) {
+router.post('/createinvitation', authenticationWith('jwt'), async function (req, res) {
     const validateError = Validator.verifyParams(req.body, { email: 'email', first_name: 'string' });
     if (validateError) return ResponseBuilder.sendSuccess(req, res, 'Request is missing params!', validateError);    
 
@@ -25,10 +24,6 @@ router.post('/createinvitation', password.authenticate('admin-jwt', { session: f
     //TODO: create invitation link?
      
     return ResponseBuilder.sendSuccess(req, res, token);
-});
-
-router.get('/test', password.authenticate('admin-jwt', { session: false, failureRedirect: "/" }), async function (req, res) {
-    return res.send("hello");
 });
 
 module.exports = router;

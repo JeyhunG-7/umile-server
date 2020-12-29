@@ -4,6 +4,8 @@ const Validator = require('../helpers/Validator');
 const { decodeToken } = require('../helpers/Token');
 const Password = require('../helpers/Password');
 const { addClientAsync } = require('../models/Client');
+const password = require('../models/Authentication').passport,
+    { logout, authenticationWith } = require('../models/Authentication');
 
 
 router.post('/signup', async function (req, res) {
@@ -51,6 +53,15 @@ router.post('/validate', function (req, res) {
   if (validateError) return ResponseBuilder.sendError(req, res, 'Request is missing params!', validateError);
   
   return isTokenValid(req.body.token) ? ResponseBuilder.sendSuccess(req, res) : ResponseBuilder.sendError(req, res);
+});
+
+router.post('/login', authenticationWith('client-local'), function (req, res) {
+  return ResponseBuilder.sendSuccess(req, res, req.user.token);
+});
+
+router.post('/logout', authenticationWith('jwt'), async function (req, res) {
+  await logout(req.user.id);
+  return ResponseBuilder.sendSuccess(req, res);
 });
 
 function isTokenValid(token){

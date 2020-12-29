@@ -6,7 +6,7 @@ async function createHashAsync(password){
     return bcrypt.hash(password, salt);
 }
 
-async function compare(password, dbHash){
+async function compareAsync(password, dbHash){
     try {
         var match = await bcrypt.compare(password, dbHash);
         return match;
@@ -16,4 +16,4 @@ async function compare(password, dbHash){
     }
 }
 
-module.exports = { createHashAsync, compare }
+module.exports = { createHashAsync, compareAsync }
