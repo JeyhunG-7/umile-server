@@ -15,6 +15,6 @@ CREATE TABLE clients (
     first_name      TEXT    NOT NULL,
     last_name       TEXT    NOT NULL,
     phone           TEXT    NOT NULL,
-    company_name    TEXT    NOT NULL,
+    company_name    TEXT,
     pwd_hash        TEXT    NOT NULL
 );
