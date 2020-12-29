@@ -27,6 +27,10 @@ if (process.env.NODE_ENV !== 'production'){
     logger.add(new winston.transports.Console());
 }
 
+const getDate = function(){
+    return new Date().toISOString();
+}
+
 /**
  * Log class that adds metadata when logging
  */
@@ -36,21 +40,21 @@ class Log {
     }
 
     info(message){
-        logger.info('\t[%s] - %s', this.name, message);
+        logger.info('\t%s [%s] - %s', getDate(), this.name, message);
     }
 
     debug(message){
-        logger.debug('\t[%s] - %s', this.name, message);
+        logger.debug('\t%s [%s] - %s', getDate(), this.name, message);
     }
 
     error(message){
-        logger.error('\t[%s] - %s', this.name, message);
+        logger.error('\t%s [%s] - %s', getDate(), this.name, message);
     }
 }
 
 
 const expressLogger = function(req, res, next){
-    logger.info('\t[express] %s - %s %s HTTP:/%s', req.connection.remoteAddress, req.method, req.url, req.httpVersion);
+    logger.info('\t%s [express] %s - %s %s HTTP:/%s', getDate(), req.connection.remoteAddress, req.method, req.url, req.httpVersion);
     next();
 }
 

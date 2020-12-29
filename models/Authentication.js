@@ -135,7 +135,6 @@ const authenticationWith = function(authMethod, opts){
             }
 
             if (!user){
-                logger.error(`Auth error => UNAUTHORIZED_USER`);
                 return ResponseBuilder.sendError(req, res, "UNAUTHORIZED_USER");
             }
 
