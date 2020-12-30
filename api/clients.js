@@ -4,10 +4,11 @@ const Validator = require('../helpers/Validator');
 const { decodeToken, createToken } = require('../helpers/Token');
 const Password = require('../helpers/Password');
 const { addClientAsync, updatePasswordForClientAsync, findClientByEmail } = require('../models/Client');
-const password = require('../models/Authentication').passport,
-    { logout, authenticationWith } = require('../models/Authentication');
+const { logout, authenticationWith } = require('../models/Authentication');
+const { sendResetPasswordEmail } = require('./../helpers/SendGrid');
+const { DOMAIN_NAME } = require('./../helpers/Constants');
 
-const { Log } = require('./Logger'),
+const { Log } = require('./../helpers/Logger'),
     logger = new Log('ClientAPI');
 
 
@@ -109,6 +110,7 @@ router.get('/forgotpassword', async function (req, res) {
         if (result.length !== 1) {
             return ResponseBuilder.sendSuccess(req, res);
         }
+        var user = result[0];
     } catch (e){
         logger.error(`Error while getting client by email : ${JSON.stringify(e)}`);
         return ResponseBuilder.sendSuccess(req, res);
@@ -116,9 +118,15 @@ router.get('/forgotpassword', async function (req, res) {
 
     var token = createToken({email: email}, '30m');
     
-    //TODO: send email with link to reset password
-    
-    return ResponseBuilder.sendSuccess(req, res, {token: token});
+    var full_name = `${user.first_name} ${user.last_name}`;
+    if (full_name === '' || full_name.length <= 3){
+        full_name = email;
+    }
+
+    var resetLink = `${DOMAIN_NAME}/resetpassword/${token}`;
+
+    sendResetPasswordEmail(email, full_name, resetLink);    
+    return ResponseBuilder.sendSuccess(req, res);
 });
 
 function isTokenValid(token) {

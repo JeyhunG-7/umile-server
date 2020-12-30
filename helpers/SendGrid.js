@@ -1,32 +1,20 @@
 const axios = require('axios');
+
 const sgMail = require('@sendgrid/mail')
-process.env.SENDGRID_API_KEY="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";
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+const { Log } = require('./Logger'),
+    logger = new Log('SendGrid');
 
 const EMAIL = {
     noReplyEmail: "noreply@umile.xyz"
 }
 const TEMPLATE = {
-    resetPassword: 'd-42947cc44958448fbf7551c6c9ebf6d1'
+    resetPassword: 'd-42947cc44958448fbf7551c6c9ebf6d1',
+    signup: 'd-a7361353f48d4c63bfc5cd6006854927'
 }
 
-const msg = {
-    to: 'test@example.com', // Change to your recipient
-    from: 'test@example.com', // Change to your verified sender
-    subject: 'Sending with SendGrid is Fun',
-    text: 'and easy to do anywhere, even with Node.js',
-    html: '<strong>and easy to do anywhere, even with Node.js</strong>',
-  }
-  sgMail
-    .send(msg)
-    .then(() => {
-      console.log('Email sent')
-    })
-    .catch((error) => {
-      console.error(error)
-    })
-
-const sendResetPasswordEmail = async function(email, full_name, resetLink){
+exports.sendResetPasswordEmail = async function(email, full_name, resetLink){
     var opts = {
         personalizations: [
             {
@@ -54,10 +42,46 @@ const sendResetPasswordEmail = async function(email, full_name, resetLink){
                 'authorization': `Bearer ${process.env.SENDGRID_API_KEY}`
             }
         });
-        console.log('RESPONSE: ', response);
+        
+        return true;
     } catch(err){
-        console.log('ERROR: ', err);
+        logger.error(`Error while sending reset password email, ${JSON.stringify(err)}`);
+        return false;
     }
 }
 
-sendResetPasswordEmail('jeyhun.j.gurbanov@gmail.com', 'Jeyhun Gurbanov', 'https://arvel.app');
+exports.sendSignupEmail = async function(email, full_name, signupLink){
+    var opts = {
+        personalizations: [
+            {
+            to: [
+                {
+                email: email,
+                name: full_name
+                }
+            ],
+            dynamic_template_data: {
+                signupLink: signupLink
+            }
+            }
+        ],
+        from: {
+            email: EMAIL.noReplyEmail
+        },
+        template_id: TEMPLATE.signup
+    }
+
+    try{
+        var response = await axios.post('https://api.sendgrid.com/v3/mail/send', opts, {
+            headers: {
+                'content-type': 'application/json',
+                'authorization': `Bearer ${process.env.SENDGRID_API_KEY}`
+            }
+        });
+        
+        return true;
+    } catch(err){
+        logger.error(`Error while sending reset password email, ${JSON.stringify(err)}`);
+        return false;
+    }
+}

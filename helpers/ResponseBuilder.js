@@ -4,7 +4,7 @@ const { Log } = require('./Logger'),
 function sendSuccess(req, res, data = {}) {
     const responseObject = { success: true, data }
 
-    logger.debug('API success => ', req.originalUrl);
+    logger.info('API success => ', req.originalUrl);
 
     return res.send(responseObject);
 }
