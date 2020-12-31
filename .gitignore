@@ -8,6 +8,7 @@ www/
 *.rdb
 *.tmp.txt
 log/
+coverage/
 
 # TypeScript v1 declaration files
 typings/
