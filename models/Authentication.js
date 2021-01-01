@@ -135,7 +135,7 @@ const authenticationWith = function(authMethod, opts){
             }
 
             if (!user){
-                return ResponseBuilder.sendError(req, res, "UNAUTHORIZED_USER");
+                return ResponseBuilder.sendError(req, res, "Invalid email or password");
             }
 
             req.user = user;

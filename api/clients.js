@@ -63,6 +63,10 @@ router.post('/login', authenticationWith('client-local'), function (req, res) {
     return ResponseBuilder.sendSuccess(req, res, req.user.token);
 });
 
+router.get('/login', authenticationWith('jwt'), function (req, res) {
+    return ResponseBuilder.sendSuccess(req, res);
+});
+
 router.post('/logout', authenticationWith('jwt'), async function (req, res) {
     await logout(req.user.id);
     return ResponseBuilder.sendSuccess(req, res);
@@ -97,7 +101,7 @@ router.post('/forgotpassword', async function (req, res) {
     return ResponseBuilder.sendSuccess(req, res, "Password was successfully reset");
 });
 
-router.get('/forgotpassword', async function (req, res) {
+router.post('/emailforgotpassword', async function (req, res) {
     const validateError = Validator.verifyParams(req.body, {
         email:   'email',
     });
@@ -105,15 +109,17 @@ router.get('/forgotpassword', async function (req, res) {
 
     const { email } = req.body;
 
+    var userFacingMessage = `Email will be sent to ${email} if it is registered`;
+
     try{
         var result = await findClientByEmail(email);
         if (result.length !== 1) {
-            return ResponseBuilder.sendSuccess(req, res);
+            return ResponseBuilder.sendSuccess(req, res, userFacingMessage);
         }
         var user = result[0];
     } catch (e){
         logger.error(`Error while getting client by email : ${JSON.stringify(e)}`);
-        return ResponseBuilder.sendSuccess(req, res);
+        return ResponseBuilder.sendSuccess(req, res, userFacingMessage);
     }
 
     var token = createToken({email: email}, '30m');
@@ -124,9 +130,9 @@ router.get('/forgotpassword', async function (req, res) {
     }
 
     var resetLink = `${DOMAIN_NAME}/resetpassword/${token}`;
-
-    sendResetPasswordEmail(email, full_name, resetLink);    
-    return ResponseBuilder.sendSuccess(req, res);
+    sendResetPasswordEmail(email, full_name, resetLink);
+    
+    return ResponseBuilder.sendSuccess(req, res, userFacingMessage);
 });
 
 function isTokenValid(token) {
