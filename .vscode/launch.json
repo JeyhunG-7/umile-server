@@ -31,7 +31,8 @@
             "console": "integratedTerminal",
             "args": [
                 "--runInBand",
-                "--forceExit"
+                "--forceExit",
+                "--colors"
               ],
             "skipFiles": [
                 "<node_internals>/**"
@@ -47,7 +48,8 @@
             "args": [
                 "--coverage",
                 "--runInBand",
-                "--forceExit"
+                "--forceExit",
+                "--colors"
               ],
             "skipFiles": [
                 "<node_internals>/**"
@@ -61,7 +63,8 @@
             "args": [
               "${fileBasenameNoExtension}",
               "--runInBand",
-              "--forceExit"
+              "--forceExit",
+              "--colors"
             ],
             "console": "integratedTerminal",
             "skipFiles": [
@@ -77,7 +80,8 @@
               "${fileBasenameNoExtension}",
               "--coverage",
               "--runInBand",
-              "--forceExit"
+              "--forceExit",
+              "--colors"
             ],
             "console": "integratedTerminal",
             "skipFiles": [
