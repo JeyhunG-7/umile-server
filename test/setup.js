@@ -1,4 +1,4 @@
-require('dotenv').config({ path: 'test.env' });
+require('dotenv').config({ path: '.env.test' });
 
 const { incubate } = require('./../helpers/Database');
 const fs = require('fs');
