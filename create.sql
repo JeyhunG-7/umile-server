@@ -1,8 +1,15 @@
+-- Clean up database
+
+DROP TABLE IF EXISTS admins;
+DROP TABLE IF EXISTS auth;
+DROP TABLE IF EXISTS clients;
+
+-- Create tables
+
 CREATE TABLE admins (
-    id          SERIAL  PRIMARY KEY,
+    email       TEXT    NOT NULL PRIMARY KEY,
     first_name  TEXT    NOT NULL,
     last_name   TEXT    NOT NULL,
-    email       TEXT    NOT NULL,
     pwd_hash    TEXT    NOT NULL
 );
 

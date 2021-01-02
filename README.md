@@ -7,7 +7,7 @@ PostgresDB, pgAdmin4, npm + NodeJS
 1. Create `umile` database in Postgres
 2. Create tables if not already. Run `create.sql` file in client (pgAdmin4)
 3. Run `npm install`
-4. Create `.env`file with the following structure:
+4. Create `.env` file with the following structure:
 
 ```
 NODE_ENV=development
@@ -24,4 +24,13 @@ JWT_SECRET=secret
 
 SENDGRID_API_KEY=YOUR_API_KEY
 
+```
+
+## Running tests
+1. Create `umile_test` database in Postgres
+2. Create `test.env` file with same instructions and development environment but with following changes
+3. Select configuration to run from launch configs
+
+```
+DB_NAME='umile_test'
 ```
