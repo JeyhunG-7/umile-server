@@ -18,13 +18,13 @@ router.post('/logout', authenticationWith('jwt'), async function (req, res) {
 
 router.post('/createinvitation', authenticationWith('jwt'), async function (req, res) {
     const validateError = Validator.verifyParams(req.body, { email: 'email', first_name: 'string' });
-    if (validateError) return ResponseBuilder.sendSuccess(req, res, 'Request is missing params!', validateError);    
+    if (validateError) return ResponseBuilder.sendError(req, res, 'Missing params!', validateError);
 
     var { email, first_name } = req.body;
     var token = createToken({email: email, first_name: first_name});
 
     //TODO: create invitation link?
-    var reply = sendSignupEmail(email, first_name, `${DOMAIN_NAME}/signup/${token}`);
+    var reply = await sendSignupEmail(email, first_name, `${DOMAIN_NAME}/signup/${token}`);
      
     return reply ? ResponseBuilder.sendSuccess(req, res) : ResponseBuilder.sendError(req, res, "Error while creating signup email");
 });

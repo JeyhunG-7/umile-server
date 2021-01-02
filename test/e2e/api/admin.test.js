@@ -1,13 +1,13 @@
-jest.setMock('./../../../helpers/SendGrid', {});
-const ResponseBuilder = require('../../../helpers/ResponseBuilder');
+jest.mock('./../../../helpers/SendGrid');
 
-// Setup global test framework
+// Setup express for testing
 const { app } = require('./../../../app');
 const request = require('supertest');
 const http = require('http');
 
+const SendGrid = require('./../../../helpers/SendGrid');
+
 const { builder, TABLES } = require('./../../../helpers/Database');
-const { default: each } = require('jest-each');
 
 describe('Admin API', () => {
 
@@ -38,7 +38,11 @@ describe('Admin API', () => {
         server.close(done);
     })
 
-    test('POST /login - success', async (done) => {
+    afterEach(() => {
+        jest.clearAllMocks();
+    })
+
+    test('POST /login - Success', async (done) => {
         var response = await request(server)
             .post("/api/admin/login")
             .type('form')
@@ -72,6 +76,173 @@ describe('Admin API', () => {
         done();
     });
 
+    test('POST /logout - Success', async (done) => {
+        var loginResponse = await request(server)
+            .post("/api/admin/login")
+            .type('form')
+            .send({
+                username: 'email@email.com',
+                password: 'test123'
+            })
+            .set('Accept', 'application\\json');
+        expect(loginResponse.status).toEqual(200);
+        expect(loginResponse.body).toHaveProperty('success', true);
+        expect(loginResponse.body).toHaveProperty('data');
+        
+        var auth_token = loginResponse.body.data;
+
+        var response = await request(server)
+            .post("/api/admin/logout")
+            .auth(auth_token, {type: 'bearer'});
+
+        expect(response.status).toEqual(200);
+        expect(response.body).toHaveProperty('success', true);
+        done();
+    });
+
+    test('POST /logout - Invalid Token', async (done) => {
+        var response = await request(server)
+            .post("/api/admin/logout")
+            .auth('afadfdsaflsfjlksdajflks', {type: 'bearer'});
+
+        expect(response.status).toEqual(200);
+        expect(response.body).toHaveProperty('success', false);
+        expect(response.body).toHaveProperty('message', 'Invalid email or password');
+        done();
+    });
+
+    test('POST /logout - No Token', async (done) => {
+        var response = await request(server)
+            .post("/api/admin/logout");
+
+        expect(response.status).toEqual(200);
+        expect(response.body).toHaveProperty('success', false);
+        expect(response.body).toHaveProperty('message', 'Invalid email or password');
+        done();
+    });
+
+    test('POST /createinvitation - Failure', async (done) => {
+        var loginResponse = await request(server)
+            .post("/api/admin/login")
+            .type('form')
+            .send({
+                username: 'email@email.com',
+                password: 'test123'
+            })
+            .set('Accept', 'application\\json');
+        expect(loginResponse.status).toEqual(200);
+        expect(loginResponse.body).toHaveProperty('success', true);
+        expect(loginResponse.body).toHaveProperty('data');
+        
+        var auth_token = loginResponse.body.data;
+
+        jest.spyOn(SendGrid, 'sendSignupEmail')
+            .mockImplementation((email, first_name, link) => {
+                return false;
+            });
+
+        var response = await request(server)
+            .post("/api/admin/createinvitation")
+            .type('form')
+            .send({email: 'client@email.com', "first_name": "Client"})
+            .set('Accept', 'application\\json')
+            .auth(auth_token, {type: 'bearer'});
+
+        expect(response.status).toEqual(200);
+        expect(response.body).toHaveProperty('success', false);
+        expect(response.body).toHaveProperty('message', 'Error while creating signup email');
+        
+        done();
+    });
+
+    test('POST /createinvitation - Success', async (done) => {
+        var loginResponse = await request(server)
+            .post("/api/admin/login")
+            .type('form')
+            .send({
+                username: 'email@email.com',
+                password: 'test123'
+            })
+            .set('Accept', 'application\\json');
+        expect(loginResponse.status).toEqual(200);
+        expect(loginResponse.body).toHaveProperty('success', true);
+        expect(loginResponse.body).toHaveProperty('data');
+        
+        var auth_token = loginResponse.body.data;
+
+        var sendGridEmail = '';
+        var sendGridFirstName = '';
+        var sendGridLink = '';
+        jest.spyOn(SendGrid, 'sendSignupEmail')
+            .mockImplementation((email, first_name, link) => {
+                sendGridEmail = email;
+                sendGridFirstName = first_name;
+                sendGridLink = link;
+                return true
+            });
+
+        var response = await request(server)
+            .post("/api/admin/createinvitation")
+            .type('form')
+            .send({email: 'client@email.com', "first_name": "Client"})
+            .set('Accept', 'application\\json')
+            .auth(auth_token, {type: 'bearer'});
+
+        expect(response.status).toEqual(200);
+        expect(response.body).toHaveProperty('success', true);
+
+        expect(sendGridEmail).toEqual('client@email.com');
+        expect(sendGridFirstName).toEqual('Client');
+        expect(sendGridLink).toMatch(/http.*\/signup\/.*\..*\.*/gm);
+        done();
+    });
+
+    test('POST /createinvitation - No Authentication', async (done) => {
     
+        var response = await request(server)
+            .post("/api/admin/createinvitation")
+            .type('form')
+            .send({email: 'client@email.com', "first_name": "Client"})
+            .set('Accept', 'application\\json');;
+
+        expect(response.status).toEqual(200);
+        expect(response.body).toHaveProperty('success', false);
+        expect(response.body).toHaveProperty('message', 'Invalid email or password');
+        done();
+    });
+
+    test.each([
+        ['Missing email', {first_name: 'Client'}],
+        ['Missing first_name', {email: 'email@email.com '}],
+        ['Not a valid email', {email: 'email.com '}]
+    ])
+    ('POST /createinvitation - %s', async (testName, data, done) => {
+        var loginResponse = await request(server)
+            .post("/api/admin/login")
+            .type('form')
+            .send({
+                username: 'email@email.com',
+                password: 'test123'
+            })
+            .set('Accept', 'application\\json');
+        expect(loginResponse.status).toEqual(200);
+        expect(loginResponse.body).toHaveProperty('success', true);
+        expect(loginResponse.body).toHaveProperty('data');
+        
+        var auth_token = loginResponse.body.data;
+
+        var response = await request(server)
+            .post("/api/admin/createinvitation")
+            .type('form')
+            .send(data)
+            .set('Accept', 'application\\json')
+            .auth(auth_token, {type: 'bearer'});
+
+        expect(response.status).toEqual(200);
+        expect(response.body).toHaveProperty('success', false);
+        expect(response.body).toHaveProperty('message', 'Missing params!');
+        expect(SendGrid.sendSignupEmail).not.toHaveBeenCalled();
+        done();
+    });
 });
 
