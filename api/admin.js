@@ -5,7 +5,7 @@ const Validator = require('../models/Validator');
 router.post('/login', async function (req, res) {
 
     const validateError = Validator.verifyParams(req.body, { email: 'email', pwd: 'string' });
-    if (validateError) return Logger.sendSuccess(req, res, 'Request is missing params!', validateError);
+    if (validateError) return Logger.sendError(req, res, 'Request is missing params!', validateError);
 
     const { email, pwd } = req.body;
 

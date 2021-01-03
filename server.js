@@ -14,7 +14,7 @@ app.use(
 );
 
 //API endpoints
-app.use(`/api/`, require('./api/init'));
+app.use(`/`, require('./api/init'));
 
 // Server 
 app.listen(port, () => console.log(`Server is listening at http://localhost:${port}`));

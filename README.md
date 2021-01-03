@@ -6,8 +6,9 @@ PostgresDB, pgAdmin4, npm + NodeJS
 ## Things to do before use:
 1. Create `umile` database in Postgres
 2. Create tables if not already. Run `create.sql` file in client (pgAdmin4)
-3. Run `npm install`
-4. Create `.env`file with the following structure:
+3. Run `CREATE EXTENSION postgis;` in client
+4. Run `npm install`
+5. Create `.env`file with the following structure:
 
 ```
 NODE_ENV=development
