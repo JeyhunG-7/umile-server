@@ -1,6 +1,6 @@
 const bcrypt = require('bcrypt');
-const Password = require('./../../helpers/Password');
-const { Log } = require('./../../helpers/Logger');
+const Password = require('../../../helpers/Password');
+const { Log } = require('../../../helpers/Logger');
 
 
 describe('Password Helper', () => {
