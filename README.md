@@ -34,4 +34,5 @@ SENDGRID_API_KEY=YOUR_API_KEY
 ```
 DB_NAME='umile_test'
 NODE_ENV=testing
+SENDGRID_API_KEY='' !!!IMPORTANT
 ```

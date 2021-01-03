@@ -18,7 +18,7 @@ describe('Admin API', () => {
         await builder()
             .table(TABLES.admins)
             .insert({
-                email: 'email@email.com',
+                email: 'admin@email.com',
                 first_name: 'Fname',
                 last_name: 'Lname',
                 pwd_hash: '$2b$10$2U3Dxk5f.UNffLl9WdTlBeR4vHPiSWamqiNqQs8bvmF8/VnHDhEeS' //test123
@@ -29,9 +29,10 @@ describe('Admin API', () => {
     })
 
     afterAll(async (done) => {
+        // remove admin
         await builder()
             .table(TABLES.admins)
-            .where({email: 'email@email.com'})
+            .where({email: 'admin@email.com'})
             .delete();
 
 
@@ -47,7 +48,7 @@ describe('Admin API', () => {
             .post("/api/admin/login")
             .type('form')
             .send({
-                username: 'email@email.com',
+                username: 'admin@email.com',
                 password: 'test123'
             })
             .set('Accept', 'application\\json');
@@ -60,9 +61,9 @@ describe('Admin API', () => {
 
     test.each([
             ['Missing email', {password: 'test123'}],
-            ['Missing password', {username: 'email@email.com'}],
-            ['Invalid password', {username: 'email@email.com', password: 'notValid'}],
-            ['Invalid email', {username: 'notValidEmail@email.com', password: 'test123'}]
+            ['Missing password', {username: 'admin@email.com'}],
+            ['Invalid password', {username: 'admin@email.com', password: 'notValid'}],
+            ['Invalid email', {username: 'notValidadmin@email.com', password: 'test123'}]
         ])
         ('POST /login - %s', async (textName, data, done) => {
         var response = await request(server)
@@ -81,7 +82,7 @@ describe('Admin API', () => {
             .post("/api/admin/login")
             .type('form')
             .send({
-                username: 'email@email.com',
+                username: 'admin@email.com',
                 password: 'test123'
             })
             .set('Accept', 'application\\json');
@@ -126,7 +127,7 @@ describe('Admin API', () => {
             .post("/api/admin/login")
             .type('form')
             .send({
-                username: 'email@email.com',
+                username: 'admin@email.com',
                 password: 'test123'
             })
             .set('Accept', 'application\\json');
@@ -160,7 +161,7 @@ describe('Admin API', () => {
             .post("/api/admin/login")
             .type('form')
             .send({
-                username: 'email@email.com',
+                username: 'admin@email.com',
                 password: 'test123'
             })
             .set('Accept', 'application\\json');
@@ -213,7 +214,7 @@ describe('Admin API', () => {
 
     test.each([
         ['Missing email', {first_name: 'Client'}],
-        ['Missing first_name', {email: 'email@email.com '}],
+        ['Missing first_name', {email: 'admin@email.com '}],
         ['Not a valid email', {email: 'email.com '}]
     ])
     ('POST /createinvitation - %s', async (testName, data, done) => {
@@ -221,7 +222,7 @@ describe('Admin API', () => {
             .post("/api/admin/login")
             .type('form')
             .send({
-                username: 'email@email.com',
+                username: 'admin@email.com',
                 password: 'test123'
             })
             .set('Accept', 'application\\json');
