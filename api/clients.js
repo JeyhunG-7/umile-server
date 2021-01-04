@@ -3,13 +3,13 @@ const ResponseBuilder = require('../helpers/ResponseBuilder');
 const Validator = require('../helpers/Validator');
 const { decodeToken, createToken } = require('../helpers/Token');
 const Password = require('../helpers/Password');
-const { addClientAsync, updatePasswordForClientAsync, findClientByEmail } = require('../models/Client');
+const Client = require('../models/Client');
 const { logout, authenticationWith } = require('../models/Authentication');
-const { sendResetPasswordEmail } = require('./../helpers/SendGrid');
+const SendGrid = require('./../helpers/SendGrid');
 const { DOMAIN_NAME } = require('./../helpers/Constants');
 
 const { Log } = require('./../helpers/Logger'),
-    logger = new Log('ClientAPI');
+    logger = new Log('ClientsAPI');
 
 
 router.post('/signup', async function (req, res) {
@@ -41,7 +41,7 @@ router.post('/signup', async function (req, res) {
     }
 
     try {
-        await addClientAsync(email, first_name, last_name, company_name, phone, passwordHash);
+        await Client.addClientAsync(email, first_name, last_name, company_name, phone, passwordHash);
     } catch (e) {
         if (e.message.includes('duplicate key')) {
             return ResponseBuilder.sendError(req, res, "Record already exists");
@@ -92,7 +92,7 @@ router.post('/forgotpassword', async function (req, res) {
     }
 
     try {
-        await updatePasswordForClientAsync(email, passwordHash);
+        await Client.updatePasswordForClientAsync(email, passwordHash);
     } catch (e) {
         logger.error(`Couldn't update database: ${JSON.stringify(e)}`);
         return ResponseBuilder.sendError(req, res, "Something went wrong while resetting password", "Couldn't update database");
@@ -112,8 +112,8 @@ router.post('/emailforgotpassword', async function (req, res) {
     var userFacingMessage = `Email will be sent to ${email} if it is registered`;
 
     try{
-        var result = await findClientByEmail(email);
-        if (result.length !== 1) {
+        var result = await Client.findClientByEmail(email);
+        if (result && result.length !== 1) {
             return ResponseBuilder.sendSuccess(req, res, userFacingMessage);
         }
         var user = result[0];
@@ -130,7 +130,7 @@ router.post('/emailforgotpassword', async function (req, res) {
     }
 
     var resetLink = `${DOMAIN_NAME}/resetpassword/${token}`;
-    sendResetPasswordEmail(email, full_name, resetLink);
+    SendGrid.sendResetPasswordEmail(email, full_name, resetLink);
     
     return ResponseBuilder.sendSuccess(req, res, userFacingMessage);
 });
