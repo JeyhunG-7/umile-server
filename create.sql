@@ -49,10 +49,10 @@ CREATE TABLE nodes (
 );
 
 CREATE TABLE routes (
-    id          SERIAL      PRIMARY KEY,
-    full        BOOLEAN     NOT NULL    DEFAULT FALSE,
-    distance    REAL        NOT NULL    DEFAULT 0,
-    duration    REAL        NOT NULL    DEFAULT 0
+    id              SERIAL      PRIMARY KEY,
+    isfull          BOOLEAN     NOT NULL    DEFAULT FALSE,
+    distance        REAL        NOT NULL    DEFAULT 0,
+    duration        REAL        NOT NULL    DEFAULT 0
 );
 
 CREATE TABLE route_nodes (

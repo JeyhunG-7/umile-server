@@ -98,7 +98,7 @@ const run = async (cityId) => {
         }
 
         const updateObj = { // set route full if more than 4 hours
-            full: (totalDuration + 10 * 60) > 4 * 60 * 60,
+            isfull: (totalDuration + 10 * 60) > 4 * 60 * 60,
             distance: totalDistance,
             duration: totalDuration
         }
@@ -120,7 +120,7 @@ module.exports = { run }
 const cleanNonCompleteRoutes = async () => {
 
     try {
-        await Database.builder().table('routes').where('full', false).delete();
+        await Database.builder().table('routes').where('isfull', false).delete();
     } catch (error) {
         console.error(error);
         return false;
@@ -151,7 +151,7 @@ const getOutstandingOrders = async (cityId) => {
         AND nodes.id NOT IN (
             SELECT node FROM route_nodes 
             INNER JOIN routes ON routes.id=route_nodes.id
-            WHERE NOT routes.full
+            WHERE NOT routes.isfull
         )
         GROUP BY 1, 2
         ORDER BY 1, 2

@@ -102,7 +102,7 @@ router.get('/order/deleteAll', async function (req, res) {
 router.get('/routes', async function (req, res) {
 
     const query = `
-    SELECT routes.id, routes.full,
+    SELECT routes.id, routes.isfull,
         routes.duration AS "totalDuration",
         routes.distance AS "totalDistance",
         SUM(CASE WHEN nodes.action_id=1 THEN 1 ELSE 0 END)::integer AS pickups,
@@ -180,7 +180,7 @@ router.get('/route/full', async function (req, res) {
     const { id, flag } = req.query;
 
     try {
-        await Database.builder().table('routes').where('id', id).update('full', flag);
+        await Database.builder().table('routes').where('id', id).update('isfull', flag);
     } catch (error) {
         console.error(error.message);
         return Logger.sendError(req, res, error.message);
