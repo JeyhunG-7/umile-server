@@ -9,7 +9,7 @@ const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 
 router.post('/submitOrder', async function (req, res) {
     const validateError = Validator.verifyParams(req.body, { pickup: 'number', deliver: 'array' });
-    if (validateError) return Logger.sendSuccess(req, res, 'Request is missing params!', validateError);
+    if (validateError) return Logger.sendError(req, res, 'Request is missing params!', validateError);
 
     const cityId = 1, clientId = 1;
 
@@ -41,7 +41,7 @@ router.post('/submitOrder', async function (req, res) {
 
 router.get('/randomPoints', async function (req, res) {
     const validateError = Validator.verifyParams(req.query, { n: 'number' });
-    if (validateError) return Logger.sendSuccess(req, res, 'Request is missing params!', validateError);
+    if (validateError) return Logger.sendError(req, res, 'Request is missing params!', validateError);
 
     const cityId = 1;
     const result = [];
@@ -67,13 +67,25 @@ router.get('/randomPoints', async function (req, res) {
 });
 
 router.get('/run', async function (req, res) {
-    const result = await Scheduler.run(1);
+    const cityId = 1;
+
+    const validateError = Validator.verifyParams(req.query, { dirW: 'number', disW: 'number', dirBias: 'number' });
+    if (validateError) return Logger.sendError(req, res, 'Request is missing params!', validateError);
+
+    const { dirW, disW, dirBias } = req.query;
+
+    const totalWeight = Number(dirW) + Number(disW);
+    if (totalWeight !== 1) return Logger.sendError(req, res, 'Total weight must be 100%');
+
+    const result = await Scheduler.run(cityId, { dirW, disW }, Number(dirBias));
+    if (!result) return Logger.sendError(req, res, 'Error while running scheduler');
+
     return Logger.sendSuccess(req, res, result);
 });
 
 router.get('/order/delete', async function (req, res) {
     const validateError = Validator.verifyParams(req.query, { id: 'number' });
-    if (validateError) return Logger.sendSuccess(req, res, 'Request is missing params!', validateError);
+    if (validateError) return Logger.sendError(req, res, 'Request is missing params!', validateError);
 
     const { id } = req.query;
 
@@ -91,6 +103,7 @@ router.get('/order/deleteAll', async function (req, res) {
 
     try {
         await Database.builder().table('orders').delete();
+        await Database.builder().table('routes').delete();
     } catch (error) {
         console.error(error.message);
         return Logger.sendError(req, res, error.message);
@@ -101,56 +114,55 @@ router.get('/order/deleteAll', async function (req, res) {
 
 router.get('/routes', async function (req, res) {
 
+    const query = `
+    SELECT routes.id, routes.isfull,
+        routes.duration AS "totalDuration",
+        routes.distance AS "totalDistance",
+        SUM(CASE WHEN nodes.action_id=1 THEN 1 ELSE 0 END)::integer AS pickups,
+        SUM(CASE WHEN nodes.action_id=2 THEN 1 ELSE 0 END)::integer AS deliveries,
+        SUM(places.viscosity) AS "handlingTime",
+        jsonb_build_object(
+            'type', 'Feature',
+            'id',	routes.id,
+            'properties', '{}'::json,
+            'geometry',	ST_AsGeoJson(ST_MakeLine(places.geom ORDER BY rn.seq))::json
+        ) AS geojson
+    FROM route_nodes rn
+    INNER JOIN routes ON routes.id=rn.route_id
+    INNER JOIN nodes ON rn.node=nodes.id
+    INNER JOIN places ON nodes.place_id=places.id
+    GROUP BY 1, 2;`
+
     // const query = `
     // SELECT routes.id, routes.isfull,
     //     routes.duration AS "totalDuration",
     //     routes.distance AS "totalDistance",
-    //     SUM(CASE WHEN nodes.action_id=1 THEN 1 ELSE 0 END)::integer AS pickups,
+    // 	SUM(CASE WHEN nodes.action_id=1 THEN 1 ELSE 0 END)::integer AS pickups,
     //     SUM(CASE WHEN nodes.action_id=2 THEN 1 ELSE 0 END)::integer AS deliveries,
     //     SUM(places.viscosity) AS "handlingTime",
-    //     jsonb_build_object(
+    // 	jsonb_build_object(
     //         'type', 'Feature',
     //         'id',	routes.id,
     //         'properties', '{}'::json,
     //         'geometry',	ST_AsGeoJson(ST_MakeLine(places.geom))::json
     //     ) AS geojson
-    // FROM route_nodes rn
-    // INNER JOIN routes ON routes.id=rn.route_id
-    // INNER JOIN nodes ON rn.node=nodes.id
+    // FROM(
+    //     SELECT routes.id, routes.isfull,
+    //         rn.seq,
+    //         places.id,
+    //         rn.route_id,
+    //         rn.node
+    //     FROM route_nodes rn
+    //     INNER JOIN routes ON routes.id=rn.route_id
+    //     INNER JOIN nodes ON rn.node=nodes.id
+    //     INNER JOIN places ON nodes.place_id=places.id
+    //     GROUP BY 1,2,3,4,5,6
+    //     ORDER by rn.seq ASC
+    // ) as sub
+    // INNER JOIN routes ON routes.id=sub.route_id
+    // INNER JOIN nodes ON sub.node=nodes.id
     // INNER JOIN places ON nodes.place_id=places.id
-    // GROUP BY 1, 2;`
-
-    const query = `
-    SELECT routes.id, routes.isfull,
-        routes.duration AS "totalDuration",
-        routes.distance AS "totalDistance",
-		SUM(CASE WHEN nodes.action_id=1 THEN 1 ELSE 0 END)::integer AS pickups,
-        SUM(CASE WHEN nodes.action_id=2 THEN 1 ELSE 0 END)::integer AS deliveries,
-        SUM(places.viscosity) AS "handlingTime",
-		jsonb_build_object(
-            'type', 'Feature',
-            'id',	routes.id,
-            'properties', '{}'::json,
-            'geometry',	ST_AsGeoJson(ST_MakeLine(places.geom))::json
-        ) AS geojson
-FROM(
-	SELECT routes.id, routes.isfull,
-		rn.seq,
-		places.id,
-		rn.route_id,
-		rn.node
-    FROM route_nodes rn
-    INNER JOIN routes ON routes.id=rn.route_id
-    INNER JOIN nodes ON rn.node=nodes.id
-    INNER JOIN places ON nodes.place_id=places.id
-	GROUP BY 1,2,3,4,5,6
-	ORDER by rn.seq ASC
-) as sub
-    INNER JOIN routes ON routes.id=sub.route_id
-    INNER JOIN nodes ON sub.node=nodes.id
-    INNER JOIN places ON nodes.place_id=places.id
-	GROUP BY 1,2;
-    `
+    // GROUP BY 1,2;`
 
     const result = await Database.incubate(query);
     if (!result) return Logger.sendError(req, res);
@@ -191,7 +203,7 @@ router.get('/orders', async function (req, res) {
 
 router.get('/route/delete', async function (req, res) {
     const validateError = Validator.verifyParams(req.query, { id: 'number' });
-    if (validateError) return Logger.sendSuccess(req, res, 'Request is missing params!', validateError);
+    if (validateError) return Logger.sendError(req, res, 'Request is missing params!', validateError);
 
     const { id } = req.query;
 
@@ -207,7 +219,7 @@ router.get('/route/delete', async function (req, res) {
 
 router.get('/route/full', async function (req, res) {
     const validateError = Validator.verifyParams(req.query, { id: 'number', flag: 'boolean' });
-    if (validateError) return Logger.sendSuccess(req, res, 'Request is missing params!', validateError);
+    if (validateError) return Logger.sendError(req, res, 'Request is missing params!', validateError);
 
     const { id, flag } = req.query;
 

@@ -3,19 +3,15 @@ const Database = require('../models/Database');
 
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 
-const run = async (cityId) => {
-    const routeNodes = [];
+const run = async (cityId, weights, dirBiasedTowards) => {
 
     const cleanupResult = await cleanNonCompleteRoutes();
     if (!cleanupResult) return false;
 
     const orders = await getOutstandingOrders(cityId);
-    if (!orders) return false;
+    if (!orders || orders.length === 0) return false;
 
-    let pickupOrderMap = {}
-    let placesInfo = {}
-    let allPlaces = [];
-
+    let pickupOrderMap = {}, placesInfo = {}, allPlaces = [];
     orders.forEach(({ data }) => {
         const pickup = data[0].places[0];
         const deliver = data[1].places;
@@ -45,16 +41,66 @@ const run = async (cityId) => {
         }
     })
 
-    const centerGeom = await centroid(allPlaces);
-    if (!centerGeom) return false;
+    const costRouteMap = {};
+    let lowestCost = Number.POSITIVE_INFINITY;
 
-    let currentPlaceId = await furthestPlace(centerGeom, placesToVisit);
-    if (!currentPlaceId) return false;
+    for (const currentPlaceId of placesToVisit) {
+
+        const optimized = await optimize(currentPlaceId, placesToVisit, allPlaces, pickupOrderMap, placesInfo, weights, dirBiasedTowards);
+        if (!optimized) return false;
+
+        const { totalDistance, totalDuration } = optimized;
+
+        const cost = (totalDistance / 1000) * 0.01 + (totalDuration / 3600);
+
+        if (lowestCost > cost) lowestCost = cost;
+
+        costRouteMap[cost] = optimized;
+    }
+
+    try {
+        const { totalDistance, totalDuration, nodes } = costRouteMap[lowestCost];
+
+        const insertObj = {
+            isfull: (totalDuration + 10 * 60) > 4 * 60 * 60,
+            distance: totalDistance,
+            duration: totalDuration
+        }
+
+        const route = await Database.builder().table('routes').insert(insertObj).returning('id');
+
+        const routeId = route[0];
+
+        for (const index in nodes) {
+            const nodeId = nodes[index];
+
+            const obj = { route_id: routeId, node: nodeId, seq: Number(index) + 1 }
+
+            await Database.builder().table('route_nodes').insert(obj).returning('id');
+        }
+
+        console.log('Scheduler is Done!!');
+
+        return true;
+
+    } catch (error) {
+        console.error(error.message);
+        return false;
+    }
+}
+
+const optimize = async (_currentPlaceId, _placesToVisit, _allPlaces, pickupOrderMap, placesInfo, weights, dirBiasedTowards) => {
+    const routeNodes = [];
+
+    let currentPlaceId = _currentPlaceId + 0;
+    let placesToVisit = [..._placesToVisit];
+    let allPlaces = [..._allPlaces];
 
     while (placesToVisit.length > 0) {
         routeNodes.push(currentPlaceId);
 
-        placesToVisit = placesToVisit.filter(elem => elem !== currentPlaceId);
+        allPlaces = allPlaces.filter(id => id !== currentPlaceId);
+        placesToVisit = placesToVisit.filter(id => id !== currentPlaceId);
 
         if (pickupOrderMap[currentPlaceId]) {
             const placesToAdd = pickupOrderMap[currentPlaceId]
@@ -62,24 +108,24 @@ const run = async (cityId) => {
         }
 
         if (placesToVisit.length > 0) {
-            const nextPlaceId = await nextPlaceToVisit(currentPlaceId, placesToVisit);
+            const centerGeom = await centroid(dirBiasedTowards === 1 ? placesToVisit : allPlaces);
+            if (!currentPlaceId) return false;
+
+            const nextPlaceId = await nextPlaceToVisit(currentPlaceId, placesToVisit, centerGeom, weights);
             if (!nextPlaceId) return false;
+
             currentPlaceId = nextPlaceId;
         }
     }
 
     try {
-        const route = await Database.builder().table('routes').insert({}).returning('id');
 
-        const routeId = route[0];
-        let totalDuration = 0, totalDistance = 0, previous;
-
+        let totalDuration = 0, totalDistance = 0, previous, nodes = [];
         for (let i = 0; i < routeNodes.length; i++) {
+
             const current = placesInfo[routeNodes[i]];
 
-            const obj = { route_id: routeId, node: current.nodeId, seq: i + 1 }
-
-            await Database.builder().table('route_nodes').insert(obj).returning('id');
+            nodes.push(current.nodeId);
 
             if (!previous) {
                 previous = current;
@@ -97,22 +143,12 @@ const run = async (cityId) => {
             previous = current;
         }
 
-        const updateObj = { // set route full if more than 4 hours
-            isfull: (totalDuration + 10 * 60) > 4 * 60 * 60,
-            distance: totalDistance,
-            duration: totalDuration
-        }
-
-        await Database.builder().table('routes').where('id', routeId).update(updateObj);
+        return { totalDistance, totalDuration, nodes }
 
     } catch (error) {
         console.error(error.message);
         return false;
     }
-
-    console.log('Scheduler is Done!!');
-
-    return true;
 }
 
 module.exports = { run }
@@ -150,8 +186,8 @@ const getOutstandingOrders = async (cityId) => {
         WHERE orders.city_id=$1
         AND nodes.id NOT IN (
             SELECT node FROM route_nodes 
-            INNER JOIN routes ON routes.id=route_nodes.id
-            WHERE NOT routes.isfull
+            INNER JOIN routes ON routes.id=route_nodes.route_id
+            WHERE routes.isfull
         )
         GROUP BY 1, 2
         ORDER BY 1, 2
@@ -161,12 +197,12 @@ const getOutstandingOrders = async (cityId) => {
     return await Database.incubate(query, { params: [cityId] });
 }
 
-const centroid = async (nodeIds) => {
+const centroid = async (placeIds) => {
 
     const query = `
     SELECT ST_Centroid(ST_Collect(geom)) AS centroid
     FROM places
-    WHERE id IN (${nodeIds.join(',')});`
+    WHERE id IN (${placeIds.join(',')});`
 
     const result = await Database.incubate(query);
     return result && result[0].centroid;
@@ -184,43 +220,39 @@ const furthestPlace = async (centerGeom, placeIds) => {
     return result && result[0].id;
 }
 
-const nextPlaceToVisit = async (currentPlaceId, placeIdsToVisit) => {
-    // const query = `
-    // WITH points AS (
-    //     SELECT id, geom FROM places WHERE id IN (${placeIdsToVisit.join(',')})
-    // ), currentPoint AS (
-    //      SELECT geom FROM places WHERE id=${currentPlaceId}
-    // ), collection AS (
-    //   SELECT
-    //       ST_Centroid(ST_Collect(points.geom)) AS point,
-    //       max(ST_Distance(currentPoint.geom, points.geom)) AS max_distance
-    //   FROM points
-    //   INNER JOIN currentPoint ON true
-    // )
-    // SELECT
-    //        id,
-    //        1 - abs(degrees(ST_Azimuth(currentPoint.geom, points.geom)) -
-    //        degrees(ST_Azimuth(currentPoint.geom, collection.point)))
-    //        /360 +
-    //       ST_Distance(currentPoint.geom, points.geom)
-    //       /collection.max_distance AS thing
-    // FROM points
-    // INNER JOIN collection ON true
-    // INNER JOIN currentPoint ON true
-    // ORDER BY thing;`
-
+const nextPlaceToVisit = async (currentPlaceId, placeIdsToVisit, biasCenterGeom, { dirW, disW }) => {
     const query = `
     WITH points AS (
         SELECT id, geom FROM places WHERE id IN (${placeIdsToVisit.join(',')})
     ), currentPoint AS (
          SELECT geom FROM places WHERE id=${currentPlaceId}
+    ), collection AS (
+      SELECT max(ST_Distance(currentPoint.geom, points.geom)) AS max_distance
+      FROM points
+      INNER JOIN currentPoint ON true
     )
     SELECT
-           id,
-          ST_Distance(currentPoint.geom, points.geom) as thing
+        id,
+        (1 - abs(degrees(ST_Azimuth(currentPoint.geom, points.geom)) -
+        degrees(ST_Azimuth(currentPoint.geom, '${biasCenterGeom}'))) / 360) * ${dirW} +
+        (ST_Distance(currentPoint.geom, points.geom) / collection.max_distance) * ${disW}
     FROM points
+    INNER JOIN collection ON true
     INNER JOIN currentPoint ON true
-    ORDER BY thing;`
+    ORDER BY 2;`
+
+    // const query = `
+    // WITH points AS (
+    //     SELECT id, geom FROM places WHERE id IN (${placeIdsToVisit.join(',')})
+    // ), currentPoint AS (
+    //      SELECT geom FROM places WHERE id=${currentPlaceId}
+    // )
+    // SELECT
+    //        id,
+    //       ST_Distance(currentPoint.geom, points.geom) as thing
+    // FROM points
+    // INNER JOIN currentPoint ON true
+    // ORDER BY thing;`
 
     const result = await Database.incubate(query);
     return result && result[0].id;
