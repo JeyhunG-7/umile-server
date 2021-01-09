@@ -101,24 +101,56 @@ router.get('/order/deleteAll', async function (req, res) {
 
 router.get('/routes', async function (req, res) {
 
+    // const query = `
+    // SELECT routes.id, routes.isfull,
+    //     routes.duration AS "totalDuration",
+    //     routes.distance AS "totalDistance",
+    //     SUM(CASE WHEN nodes.action_id=1 THEN 1 ELSE 0 END)::integer AS pickups,
+    //     SUM(CASE WHEN nodes.action_id=2 THEN 1 ELSE 0 END)::integer AS deliveries,
+    //     SUM(places.viscosity) AS "handlingTime",
+    //     jsonb_build_object(
+    //         'type', 'Feature',
+    //         'id',	routes.id,
+    //         'properties', '{}'::json,
+    //         'geometry',	ST_AsGeoJson(ST_MakeLine(places.geom))::json
+    //     ) AS geojson
+    // FROM route_nodes rn
+    // INNER JOIN routes ON routes.id=rn.route_id
+    // INNER JOIN nodes ON rn.node=nodes.id
+    // INNER JOIN places ON nodes.place_id=places.id
+    // GROUP BY 1, 2;`
+
     const query = `
     SELECT routes.id, routes.isfull,
         routes.duration AS "totalDuration",
         routes.distance AS "totalDistance",
-        SUM(CASE WHEN nodes.action_id=1 THEN 1 ELSE 0 END)::integer AS pickups,
+		SUM(CASE WHEN nodes.action_id=1 THEN 1 ELSE 0 END)::integer AS pickups,
         SUM(CASE WHEN nodes.action_id=2 THEN 1 ELSE 0 END)::integer AS deliveries,
         SUM(places.viscosity) AS "handlingTime",
-        jsonb_build_object(
+		jsonb_build_object(
             'type', 'Feature',
             'id',	routes.id,
             'properties', '{}'::json,
             'geometry',	ST_AsGeoJson(ST_MakeLine(places.geom))::json
         ) AS geojson
+FROM(
+	SELECT routes.id, routes.isfull,
+		rn.seq,
+		places.id,
+		rn.route_id,
+		rn.node
     FROM route_nodes rn
     INNER JOIN routes ON routes.id=rn.route_id
     INNER JOIN nodes ON rn.node=nodes.id
     INNER JOIN places ON nodes.place_id=places.id
-    GROUP BY 1, 2;`
+	GROUP BY 1,2,3,4,5,6
+	ORDER by rn.seq ASC
+) as sub
+    INNER JOIN routes ON routes.id=sub.route_id
+    INNER JOIN nodes ON sub.node=nodes.id
+    INNER JOIN places ON nodes.place_id=places.id
+	GROUP BY 1,2;
+    `
 
     const result = await Database.incubate(query);
     if (!result) return Logger.sendError(req, res);

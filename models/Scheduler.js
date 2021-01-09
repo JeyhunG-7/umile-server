@@ -185,27 +185,40 @@ const furthestPlace = async (centerGeom, placeIds) => {
 }
 
 const nextPlaceToVisit = async (currentPlaceId, placeIdsToVisit) => {
+    // const query = `
+    // WITH points AS (
+    //     SELECT id, geom FROM places WHERE id IN (${placeIdsToVisit.join(',')})
+    // ), currentPoint AS (
+    //      SELECT geom FROM places WHERE id=${currentPlaceId}
+    // ), collection AS (
+    //   SELECT
+    //       ST_Centroid(ST_Collect(points.geom)) AS point,
+    //       max(ST_Distance(currentPoint.geom, points.geom)) AS max_distance
+    //   FROM points
+    //   INNER JOIN currentPoint ON true
+    // )
+    // SELECT
+    //        id,
+    //        1 - abs(degrees(ST_Azimuth(currentPoint.geom, points.geom)) -
+    //        degrees(ST_Azimuth(currentPoint.geom, collection.point)))
+    //        /360 +
+    //       ST_Distance(currentPoint.geom, points.geom)
+    //       /collection.max_distance AS thing
+    // FROM points
+    // INNER JOIN collection ON true
+    // INNER JOIN currentPoint ON true
+    // ORDER BY thing;`
+
     const query = `
     WITH points AS (
         SELECT id, geom FROM places WHERE id IN (${placeIdsToVisit.join(',')})
     ), currentPoint AS (
          SELECT geom FROM places WHERE id=${currentPlaceId}
-    ), collection AS (
-      SELECT
-          ST_Centroid(ST_Collect(points.geom)) AS point,
-          max(ST_Distance(currentPoint.geom, points.geom)) AS max_distance
-      FROM points
-      INNER JOIN currentPoint ON true
     )
     SELECT
            id,
-           1 - abs(degrees(ST_Azimuth(currentPoint.geom, points.geom)) -
-           degrees(ST_Azimuth(currentPoint.geom, collection.point)))
-           /360 +
-          ST_Distance(currentPoint.geom, points.geom)
-          /collection.max_distance AS thing
+          ST_Distance(currentPoint.geom, points.geom) as thing
     FROM points
-    INNER JOIN collection ON true
     INNER JOIN currentPoint ON true
     ORDER BY thing;`
 
