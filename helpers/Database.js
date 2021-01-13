@@ -52,10 +52,10 @@ const incubate = async (query, { params = undefined, rowCount = -1 } = {}) => {
     try {
         const result = await connection.query({ text: query, values: params });
 
-        if (result && result.rows > rowCount) return result.rows;
+        if (result && result.rows.length > rowCount) return result.rows;
 
     } catch (error) {
-        console.error(`DB (${database}) Error ->`, error.message, error.hint || '');
+        console.error(`DB Error ->`, error.message, error.hint || '');
     } finally {
         connection.end();
     }
