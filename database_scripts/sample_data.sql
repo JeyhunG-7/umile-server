@@ -1,4 +1,5 @@
-INSERT INTO clients(name) VALUES ('Joe Blow');
+INSERT INTO clients(email, first_name, last_name, phone, pwd_hash) 
+VALUES ('joe.blow@email.com', 'Joe', 'Blow', '4031111111', 'asdjfaljfaldjfklasdjflk');
 
 INSERT INTO actions(short_name, name) VALUES ('pickup', 'Pick Up');
 INSERT INTO actions(short_name, name) VALUES ('delivery', 'Delivery');

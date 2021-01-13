@@ -1,6 +1,6 @@
 const axios = require('axios');
 const router = require('express').Router();
-const Logger = require('../helpers/Logger');
+const ResponseBuilder = require('../helpers/ResponseBuilder');
 const Validator = require('../helpers/Validator');
 const Database = require('../helpers/Database');
 const Scheduler = require('../models/Scheduler');
@@ -9,7 +9,7 @@ const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 
 router.post('/submitOrder', async function (req, res) {
     const validateError = Validator.verifyParams(req.body, { pickup: 'number', deliver: 'array' });
-    if (validateError) return Logger.sendError(req, res, 'Request is missing params!', validateError);
+    if (validateError) return ResponseBuilder.sendError(req, res, 'Request is missing params!', validateError);
 
     const cityId = 1, clientId = 1;
 
@@ -36,12 +36,12 @@ router.post('/submitOrder', async function (req, res) {
         console.error(error.message);
     }
 
-    return Logger.sendSuccess(req, res);
+    return ResponseBuilder.sendSuccess(req, res);
 });
 
 router.get('/randomPoints', async function (req, res) {
     const validateError = Validator.verifyParams(req.query, { n: 'number' });
-    if (validateError) return Logger.sendError(req, res, 'Request is missing params!', validateError);
+    if (validateError) return ResponseBuilder.sendError(req, res, 'Request is missing params!', validateError);
 
     const cityId = 1;
     const result = [];
@@ -63,29 +63,29 @@ router.get('/randomPoints', async function (req, res) {
         placesToGenerate = failed;
     }
 
-    return Logger.sendSuccess(req, res, result);
+    return ResponseBuilder.sendSuccess(req, res, result);
 });
 
 router.get('/run', async function (req, res) {
     const cityId = 1;
 
     const validateError = Validator.verifyParams(req.query, { dirW: 'number', disW: 'number', dirBias: 'number' });
-    if (validateError) return Logger.sendError(req, res, 'Request is missing params!', validateError);
+    if (validateError) return ResponseBuilder.sendError(req, res, 'Request is missing params!', validateError);
 
     const { dirW, disW, dirBias } = req.query;
 
     const totalWeight = Number(dirW) + Number(disW);
-    if (totalWeight !== 1) return Logger.sendError(req, res, 'Total weight must be 100%');
+    if (totalWeight !== 1) return ResponseBuilder.sendError(req, res, 'Total weight must be 100%');
 
     const result = await Scheduler.run(cityId, { dirW, disW }, Number(dirBias));
-    if (!result) return Logger.sendError(req, res, 'Error while running scheduler');
+    if (!result) return ResponseBuilder.sendError(req, res, 'Error while running scheduler');
 
-    return Logger.sendSuccess(req, res, result);
+    return ResponseBuilder.sendSuccess(req, res, result);
 });
 
 router.get('/order/delete', async function (req, res) {
     const validateError = Validator.verifyParams(req.query, { id: 'number' });
-    if (validateError) return Logger.sendError(req, res, 'Request is missing params!', validateError);
+    if (validateError) return ResponseBuilder.sendError(req, res, 'Request is missing params!', validateError);
 
     const { id } = req.query;
 
@@ -93,10 +93,10 @@ router.get('/order/delete', async function (req, res) {
         await Database.builder().table('orders').where('id', id).delete();
     } catch (error) {
         console.error(error.message);
-        return Logger.sendError(req, res, error.message);
+        return ResponseBuilder.sendError(req, res, error.message);
     }
 
-    return Logger.sendSuccess(req, res);
+    return ResponseBuilder.sendSuccess(req, res);
 });
 
 router.get('/order/deleteAll', async function (req, res) {
@@ -106,10 +106,10 @@ router.get('/order/deleteAll', async function (req, res) {
         await Database.builder().table('routes').delete();
     } catch (error) {
         console.error(error.message);
-        return Logger.sendError(req, res, error.message);
+        return ResponseBuilder.sendError(req, res, error.message);
     }
 
-    return Logger.sendSuccess(req, res);
+    return ResponseBuilder.sendSuccess(req, res);
 });
 
 router.get('/routes', async function (req, res) {
@@ -165,9 +165,9 @@ router.get('/routes', async function (req, res) {
     // GROUP BY 1,2;`
 
     const result = await Database.incubate(query);
-    if (!result) return Logger.sendError(req, res);
+    if (!result) return ResponseBuilder.sendError(req, res);
 
-    return Logger.sendSuccess(req, res, result);
+    return ResponseBuilder.sendSuccess(req, res, result);
 });
 
 router.get('/orders', async function (req, res) {
@@ -196,14 +196,14 @@ router.get('/orders', async function (req, res) {
     GROUP BY 1, 2;`
 
     const result = await Database.incubate(query, { params: [cityId] });
-    if (!result) return Logger.sendError(req, res);
+    if (!result) return ResponseBuilder.sendError(req, res);
 
-    return Logger.sendSuccess(req, res, result);
+    return ResponseBuilder.sendSuccess(req, res, result);
 });
 
 router.get('/route/delete', async function (req, res) {
     const validateError = Validator.verifyParams(req.query, { id: 'number' });
-    if (validateError) return Logger.sendError(req, res, 'Request is missing params!', validateError);
+    if (validateError) return ResponseBuilder.sendError(req, res, 'Request is missing params!', validateError);
 
     const { id } = req.query;
 
@@ -211,15 +211,15 @@ router.get('/route/delete', async function (req, res) {
         await Database.builder().table('routes').where('id', id).delete();
     } catch (error) {
         console.error(error.message);
-        return Logger.sendError(req, res, error.message);
+        return ResponseBuilder.sendError(req, res, error.message);
     }
 
-    return Logger.sendSuccess(req, res);
+    return ResponseBuilder.sendSuccess(req, res);
 });
 
 router.get('/route/full', async function (req, res) {
     const validateError = Validator.verifyParams(req.query, { id: 'number', flag: 'boolean' });
-    if (validateError) return Logger.sendError(req, res, 'Request is missing params!', validateError);
+    if (validateError) return ResponseBuilder.sendError(req, res, 'Request is missing params!', validateError);
 
     const { id, flag } = req.query;
 
@@ -227,10 +227,10 @@ router.get('/route/full', async function (req, res) {
         await Database.builder().table('routes').where('id', id).update('isfull', flag);
     } catch (error) {
         console.error(error.message);
-        return Logger.sendError(req, res, error.message);
+        return ResponseBuilder.sendError(req, res, error.message);
     }
 
-    return Logger.sendSuccess(req, res);
+    return ResponseBuilder.sendSuccess(req, res);
 });
 
 const randomPoints = async (cityId, nPoints) => {
