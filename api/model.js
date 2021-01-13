@@ -1,8 +1,8 @@
 const axios = require('axios');
 const router = require('express').Router();
-const Logger = require('../models/Logger');
-const Validator = require('../models/Validator');
-const Database = require('../models/Database');
+const Logger = require('../helpers/Logger');
+const Validator = require('../helpers/Validator');
+const Database = require('../helpers/Database');
 const Scheduler = require('../models/Scheduler');
 
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;

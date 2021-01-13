@@ -1,5 +1,5 @@
 const axios = require('axios');
-const Database = require('../models/Database');
+const Database = require('../helpers/Database');
 
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 

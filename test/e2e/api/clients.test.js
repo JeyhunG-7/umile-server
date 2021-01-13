@@ -6,8 +6,6 @@ const request = require('supertest');
 const http = require('http');
 
 const SendGrid = require('./../../../helpers/SendGrid');
-const Client = require('./../../../models/Client');
-const { Log } = require('../../../helpers/Logger');
 
 const { builder, TABLES } = require('./../../../helpers/Database');
 
@@ -80,7 +78,7 @@ describe('Clients API', () => {
         ])
         ('POST /login - %s', async (textName, data, done) => {
         var response = await request(server)
-            .post("/api/admin/login")
+            .post("/api/clients/login")
             .type('form')
             .send(data)
             .set('Accept', 'application\\json');
