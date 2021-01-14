@@ -13,7 +13,11 @@ module.exports = async function() {
     
     try{
         var query = fs.readFileSync('./database_scripts/create.sql');
-        await incubate(query.toString());
+        var result = await incubate(query.toString());
+        if (!result){
+            console.error("\nERROR: Couldn't create tables in database");
+            process.exit();
+        }
         console.log('Setup database for tests...');
     } catch(e){
         console.error('Something went wrong while setting up database: ', e);

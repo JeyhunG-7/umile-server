@@ -1,5 +1,6 @@
 -- Clean up database
 
+DROP TABLE IF EXISTS contactus_messages CASCADE;
 DROP TABLE IF EXISTS admins CASCADE;
 DROP TABLE IF EXISTS auth CASCADE;
 DROP TABLE IF EXISTS clients CASCADE;
@@ -11,7 +12,17 @@ DROP TABLE IF EXISTS nodes CASCADE;
 DROP TABLE IF EXISTS routes CASCADE;
 DROP TABLE IF EXISTS route_nodes CASCADE;
 
+-- Setup PostGIS
+CREATE EXTENSION IF NOT EXISTS postgis;
+
 -- Create tables
+
+CREATE TABLE contactus_messages (
+    id          SERIAL   PRIMARY KEY,
+    email       TEXT    NOT NULL,
+    name        TEXT    NOT NULL,
+    message     TEXT    NOT NULL
+);
 
 CREATE TABLE admins (
     email       TEXT    NOT NULL PRIMARY KEY,

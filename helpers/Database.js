@@ -12,7 +12,8 @@ const _pgSettings = {
 const TABLES = {
     admins:     'admins',
     auth:       'auth',
-    clients:    'clients'
+    clients:    'clients',
+    contactus_messages: 'contactus_messages'
 }
 
 /**
@@ -52,7 +53,11 @@ const incubate = async (query, { params = undefined, rowCount = -1 } = {}) => {
     try {
         const result = await connection.query({ text: query, values: params });
 
-        if (result && result.rows.length > rowCount) return result.rows;
+        if (rowCount !== -1 && result && result.rows && result.rows.length > rowCount) {
+            return result.rows;
+        }
+
+        return true;
 
     } catch (error) {
         console.error(`DB Error ->`, error.message, error.hint || '');
