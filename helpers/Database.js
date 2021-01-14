@@ -53,11 +53,9 @@ const incubate = async (query, { params = undefined, rowCount = -1 } = {}) => {
     try {
         const result = await connection.query({ text: query, values: params });
 
-        if (rowCount !== -1 && result && result.rows && result.rows.length > rowCount) {
-            return result.rows;
+        if ((result && result.rows && result.rows.length > rowCount) || (result && result.length > rowCount)) {
+            return result.rows || true; 
         }
-
-        return true;
 
     } catch (error) {
         console.error(`DB Error ->`, error.message, error.hint || '');
