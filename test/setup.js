@@ -7,7 +7,8 @@ module.exports = async function() {
 
     // !IMPORTANT
     if (process.env.DB_NAME !== 'umile_test'){
-        return;
+        console.error('\nERROR: Database must be "umile_test"');
+        process.exit();
     }
     
     try{
