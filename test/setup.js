@@ -1,7 +1,6 @@
 require('dotenv').config({ path: '.env.test' });
 
-const { incubate } = require('./../helpers/Database');
-const fs = require('fs');
+process.env.DB_NAME = 'umile_test'
 
 module.exports = async function() {
 
@@ -12,6 +11,11 @@ module.exports = async function() {
     }
     
     try{
+        
+        // Need to import here so it database connection isn't initiated before DB_NAME is changed
+        const { incubate } = require('./../helpers/Database');
+        const fs = require('fs');
+
         var query = fs.readFileSync('./database_scripts/create.sql');
         var result = await incubate(query.toString());
         if (!result){
@@ -21,5 +25,6 @@ module.exports = async function() {
         console.log('Setup database for tests...');
     } catch(e){
         console.error('Something went wrong while setting up database: ', e);
+        process.exit();
     }
 }
