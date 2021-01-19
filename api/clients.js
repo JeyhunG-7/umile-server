@@ -63,11 +63,11 @@ router.post('/login', authenticationWith('client-local'), function (req, res) {
     return ResponseBuilder.sendSuccess(req, res, req.user.token);
 });
 
-router.get('/login', authenticationWith('jwt'), function (req, res) {
+router.get('/login', authenticationWith('jwt-client'), function (req, res) {
     return ResponseBuilder.sendSuccess(req, res);
 });
 
-router.post('/logout', authenticationWith('jwt'), async function (req, res) {
+router.post('/logout', authenticationWith('jwt-client'), async function (req, res) {
     await logout(req.user.id);
     return ResponseBuilder.sendSuccess(req, res);
 });

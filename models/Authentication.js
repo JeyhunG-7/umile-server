@@ -20,7 +20,12 @@ var opts = {
     ignoreExpiration: true
 }
 
-passport.use('jwt', new JwtStrategy(opts, async function (jwt_payload, done) {
+var ACCOUNT_TYPE = Object.freeze({
+    ADMIN: 0,
+    CLIENT: 1
+})
+
+passport.use('jwt-admin', new JwtStrategy(opts, async function (jwt_payload, done) {
     // check token expiration
     if (Date.now() >= jwt_payload.exp * 1000) {
         await logout(jwt_payload.id);
@@ -36,7 +41,27 @@ passport.use('jwt', new JwtStrategy(opts, async function (jwt_payload, done) {
     } catch (e) {
         logger.error('Authentication failed via JWT Token');
     }
-    return done(null, jwt_payload);
+
+    return jwt_payload.accountType === ACCOUNT_TYPE.ADMIN ? done(null, jwt_payload) : done(null, false);
+}));
+
+passport.use('jwt-client', new JwtStrategy(opts, async function (jwt_payload, done) {
+    // check token expiration
+    if (Date.now() >= jwt_payload.exp * 1000) {
+        await logout(jwt_payload.id);
+        logger.info('Requested Authentication but found expired token');
+        return done(null, false);
+    }
+
+    try {
+        var result = await findTokenId(jwt_payload.id);
+        if (result.length !== 1) {
+            return done(null, false);
+        }
+    } catch (e) {
+        logger.error('Authentication failed via JWT Token');
+    }
+    return jwt_payload.accountType === ACCOUNT_TYPE.CLIENT ? done(null, jwt_payload) : done(null, false);
 }));
 
 passport.use('admin-local', new LocalStrategy({
@@ -60,6 +85,7 @@ passport.use('admin-local', new LocalStrategy({
         var id = uuidv4();
         var payload = {
             account: admin,
+            accountType: ACCOUNT_TYPE.ADMIN,
             id: id
         }
 
@@ -100,6 +126,7 @@ passport.use('client-local', new LocalStrategy({
         var id = uuidv4();
         var payload = {
             account: client,
+            accountType: ACCOUNT_TYPE.CLIENT,
             id: id
         }
 

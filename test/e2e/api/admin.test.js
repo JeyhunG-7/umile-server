@@ -24,6 +24,18 @@ describe('Admin API', () => {
                 pwd_hash: '$2b$10$2U3Dxk5f.UNffLl9WdTlBeR4vHPiSWamqiNqQs8bvmF8/VnHDhEeS' //test123
             });
 
+        // insert client
+        await builder()
+            .table(TABLES.clients)
+            .insert({
+                email: 'client@email.com',
+                first_name: 'Fname',
+                last_name: 'Lname',
+                phone: '4031111111',
+                company_name: 'XYZ Company',
+                pwd_hash: '$2b$10$2U3Dxk5f.UNffLl9WdTlBeR4vHPiSWamqiNqQs8bvmF8/VnHDhEeS' //test123
+            });
+
         server = http.createServer(app);
         server.listen(done)
     })
@@ -33,6 +45,12 @@ describe('Admin API', () => {
         await builder()
             .table(TABLES.admins)
             .where({email: 'admin@email.com'})
+            .delete();
+
+        // remove client
+        await builder()
+            .table(TABLES.clients)
+            .where({email: 'client@email.com'})
             .delete();
 
 
@@ -74,6 +92,32 @@ describe('Admin API', () => {
         expect(response.status).toEqual(200);
         expect(response.body).toHaveProperty('success', false);
         expect(response.body).toHaveProperty('message', 'Invalid email or password');
+        done();
+    });
+
+    test('POST /login - Should fail when using client JWT instead of admin', async (done) => {
+        var loginResponse = await request(server)
+            .post("/api/clients/login")
+            .type('form')
+            .send({
+                username: 'client@email.com',
+                password: 'test123'
+            })
+            .set('Accept', 'application\\json');
+        expect(loginResponse.status).toEqual(200);
+        expect(loginResponse.body).toHaveProperty('success', true);
+        expect(loginResponse.body).toHaveProperty('data');
+
+        var auth_token = loginResponse.body.data;
+
+        var response = await request(server)
+            .post("/api/admin/logout")
+            .auth(auth_token, {type: 'bearer'});
+
+        expect(response.status).toEqual(200);
+        expect(response.body).toHaveProperty('success', false);
+        expect(response.body).toHaveProperty('message', 'Invalid email or password');
+    
         done();
     });
 

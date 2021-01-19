@@ -13,6 +13,16 @@ describe('Clients API', () => {
     var server;
 
     beforeAll(async (done) => {
+        // insert admin
+        await builder()
+            .table(TABLES.admins)
+            .insert({
+                email: 'admin@email.com',
+                first_name: 'Fname',
+                last_name: 'Lname',
+                pwd_hash: '$2b$10$2U3Dxk5f.UNffLl9WdTlBeR4vHPiSWamqiNqQs8bvmF8/VnHDhEeS' //test123
+            });
+
         // insert clients
         await builder()
             .table(TABLES.clients)
@@ -47,6 +57,12 @@ describe('Clients API', () => {
             .whereIn('email', ['client@email.com', 'client2@email.com'])
             .delete();
 
+        // remove admin
+        await builder()
+            .table(TABLES.admins)
+            .where({ email: 'admin@email.com' })
+            .delete();
+
         server.close(done);
     })
 
@@ -71,20 +87,46 @@ describe('Clients API', () => {
     });
 
     test.each([
-            ['Missing email', {password: 'test123'}],
-            ['Missing password', {username: 'client@email.com'}],
-            ['Invalid password', {username: 'client@email.com', password: 'notValid'}],
-            ['Invalid email', {username: 'admin@email.com', password: 'test123'}]
-        ])
+        ['Missing email', { password: 'test123' }],
+        ['Missing password', { username: 'client@email.com' }],
+        ['Invalid password', { username: 'client@email.com', password: 'notValid' }],
+        ['Invalid email', { username: 'admin@email.com', password: 'test123' }]
+    ])
         ('POST /login - %s', async (textName, data, done) => {
-        var response = await request(server)
-            .post("/api/clients/login")
+            var response = await request(server)
+                .post("/api/clients/login")
+                .type('form')
+                .send(data)
+                .set('Accept', 'application\\json');
+            expect(response.status).toEqual(200);
+            expect(response.body).toHaveProperty('success', false);
+            expect(response.body).toHaveProperty('message', 'Invalid email or password');
+            done();
+        });
+
+    test('POST /login - Should fail when using admin JWT instead of client', async (done) => {
+        var loginResponse = await request(server)
+            .post("/api/admin/login")
             .type('form')
-            .send(data)
+            .send({
+                username: 'admin@email.com',
+                password: 'test123'
+            })
             .set('Accept', 'application\\json');
+        expect(loginResponse.status).toEqual(200);
+        expect(loginResponse.body).toHaveProperty('success', true);
+        expect(loginResponse.body).toHaveProperty('data');
+
+        var auth_token = loginResponse.body.data;
+
+        var response = await request(server)
+            .post("/api/clients/logout")
+            .auth(auth_token, { type: 'bearer' });
+
         expect(response.status).toEqual(200);
         expect(response.body).toHaveProperty('success', false);
         expect(response.body).toHaveProperty('message', 'Invalid email or password');
+
         done();
     });
 
@@ -100,12 +142,12 @@ describe('Clients API', () => {
         expect(loginResponse.status).toEqual(200);
         expect(loginResponse.body).toHaveProperty('success', true);
         expect(loginResponse.body).toHaveProperty('data');
-        
+
         var auth_token = loginResponse.body.data;
 
         var response = await request(server)
             .get("/api/clients/login")
-            .auth(auth_token, {type: 'bearer'});
+            .auth(auth_token, { type: 'bearer' });
 
         expect(response.status).toEqual(200);
         expect(response.body).toHaveProperty('success', true);
@@ -116,7 +158,7 @@ describe('Clients API', () => {
     test('GET /login - Invalid Token', async (done) => {
         var response = await request(server)
             .get("/api/clients/login")
-            .auth('afadfdsaflsfjlksdajflks', {type: 'bearer'});
+            .auth('afadfdsaflsfjlksdajflks', { type: 'bearer' });
 
         expect(response.status).toEqual(200);
         expect(response.body).toHaveProperty('success', false);
@@ -146,12 +188,12 @@ describe('Clients API', () => {
         expect(loginResponse.status).toEqual(200);
         expect(loginResponse.body).toHaveProperty('success', true);
         expect(loginResponse.body).toHaveProperty('data');
-        
+
         var auth_token = loginResponse.body.data;
 
         var response = await request(server)
             .post("/api/clients/logout")
-            .auth(auth_token, {type: 'bearer'});
+            .auth(auth_token, { type: 'bearer' });
 
         expect(response.status).toEqual(200);
         expect(response.body).toHaveProperty('success', true);
@@ -161,7 +203,7 @@ describe('Clients API', () => {
     test('POST /logout - Invalid Token', async (done) => {
         var response = await request(server)
             .post("/api/clients/logout")
-            .auth('afadfdsaflsfjlksdajflks', {type: 'bearer'});
+            .auth('afadfdsaflsfjlksdajflks', { type: 'bearer' });
 
         expect(response.status).toEqual(200);
         expect(response.body).toHaveProperty('success', false);
@@ -180,7 +222,7 @@ describe('Clients API', () => {
     });
 
     test('POST /emailforgotpassword - Success', async (done) => {
-        
+
         let sendGridEmail = '';
         let sendGridFirstName = '';
         let sendGridLink = '';
@@ -191,7 +233,7 @@ describe('Clients API', () => {
                 sendGridLink = link;
                 return true;
             });
-        
+
         var response = await request(server)
             .post("/api/clients/emailforgotpassword")
             .type('form')
@@ -210,7 +252,7 @@ describe('Clients API', () => {
     });
 
     test('POST /emailforgotpassword - User not in db', async (done) => {
-        
+
         let sendGridEmail = null;
         let sendGridFirstName = null;
         let sendGridLink = null;
@@ -221,7 +263,7 @@ describe('Clients API', () => {
                 sendGridLink = link;
                 return true;
             });
-        
+
         var response = await request(server)
             .post("/api/clients/emailforgotpassword")
             .type('form')
@@ -240,7 +282,7 @@ describe('Clients API', () => {
     });
 
     test('POST /emailforgotpassword - No params', async (done) => {
-        
+
         let sendGridEmail = null;
         let sendGridFirstName = null;
         let sendGridLink = null;
@@ -251,7 +293,7 @@ describe('Clients API', () => {
                 sendGridLink = link;
                 return true;
             });
-        
+
         var response = await request(server)
             .post("/api/clients/emailforgotpassword");
 
@@ -275,7 +317,7 @@ describe('Clients API', () => {
                 sendGridLink = link;
                 return true;
             });
-        
+
         var response = await request(server)
             .post("/api/clients/emailforgotpassword")
             .type('form')
@@ -287,7 +329,7 @@ describe('Clients API', () => {
         expect(response.status).toEqual(200);
         expect(response.body).toHaveProperty('success', true);
         expect(response.body).toHaveProperty('data', 'Email will be sent to client2@email.com if it is registered');
-        
+
         expect(sendGridEmail).toEqual('client2@email.com');
         expect(sendGridFirstName).toEqual('client2@email.com');
         expect(sendGridLink).toMatch(/http.*\/resetpassword\/.*\..*\.*/gm);

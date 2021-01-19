@@ -11,12 +11,12 @@ router.post('/login', authenticationWith('admin-local'), function (req, res) {
     return ResponseBuilder.sendSuccess(req, res, req.user.token);
 });
 
-router.post('/logout', authenticationWith('jwt'), async function (req, res) {
+router.post('/logout', authenticationWith('jwt-admin'), async function (req, res) {
     await logout(req.user.id);
     return ResponseBuilder.sendSuccess(req, res);
 });
 
-router.post('/createinvitation', authenticationWith('jwt'), async function (req, res) {
+router.post('/createinvitation', authenticationWith('jwt-admin'), async function (req, res) {
     const validateError = Validator.verifyParams(req.body, { email: 'email', first_name: 'string' });
     if (validateError) return ResponseBuilder.sendError(req, res, 'Missing params!', validateError);
 
