@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "test": "jest"
+    "test": "jest --runInBand"
   },
   "dependencies": {
     "@sendgrid/mail": "^7.4.0",

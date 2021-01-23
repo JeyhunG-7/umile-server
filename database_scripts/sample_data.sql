@@ -1,5 +1,9 @@
-INSERT INTO clients(email, first_name, last_name, phone, pwd_hash) 
-VALUES ('joe.blow@email.com', 'Joe', 'Blow', '4031111111', 'asdjfaljfaldjfklasdjflk');
+INSERT INTO order_status(name) VALUES ('Placed');
+INSERT INTO order_status(name) VALUES ('Submitted');
+INSERT INTO order_status(name) VALUES ('Scheduled for delivery');
+INSERT INTO order_status(name) VALUES ('Out for delivery');
+INSERT INTO order_status(name) VALUES ('Delivered');
+INSERT INTO order_status(name) VALUES ('Aborted, will try again');
 
 INSERT INTO actions(short_name, name) VALUES ('pickup', 'Pick Up');
 INSERT INTO actions(short_name, name) VALUES ('delivery', 'Delivery');

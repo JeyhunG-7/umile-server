@@ -6,8 +6,11 @@ DROP TABLE IF EXISTS auth CASCADE;
 DROP TABLE IF EXISTS clients CASCADE;
 DROP TABLE IF EXISTS cities CASCADE;
 DROP TABLE IF EXISTS places CASCADE;
+DROP TABLE IF EXISTS distance_matrix CASCADE;
 DROP TABLE IF EXISTS actions CASCADE;
 DROP TABLE IF EXISTS orders CASCADE;
+DROP TABLE IF EXISTS order_status CASCADE;
+DROP TABLE IF EXISTS order_status_log CASCADE;
 DROP TABLE IF EXISTS nodes CASCADE;
 DROP TABLE IF EXISTS routes CASCADE;
 DROP TABLE IF EXISTS route_nodes CASCADE;
@@ -36,7 +39,7 @@ CREATE TABLE auth (
 );
 
 CREATE TABLE clients (
-    id          SERIAL   PRIMARY KEY,
+    id              SERIAL  PRIMARY KEY,
     email           TEXT    NOT NULL UNIQUE,
     first_name      TEXT    NOT NULL,
     last_name       TEXT    NOT NULL,
@@ -62,6 +65,14 @@ CREATE TABLE places (
     viscosity   REAL        NOT NULL    DEFAULT 3.5
 );
 
+CREATE TABLE distance_matrix (
+    id          SERIAL      PRIMARY KEY,
+    from_place  INTEGER     NOT NULL    REFERENCES places(id),
+    to_place    INTEGER     NOT NULL    REFERENCES places(id),
+    distance    REAL        NOT NULL,
+    duration    REAL        NOT NULL
+);
+
 CREATE TABLE actions (
     id		    SERIAL  PRIMARY KEY,
     short_name  TEXT    NOT NULL,
@@ -69,9 +80,21 @@ CREATE TABLE actions (
 );
 
 CREATE TABLE orders (
+    id              SERIAL      PRIMARY KEY,
+    client_id       INTEGER     NOT NULL    REFERENCES clients(id)  ON DELETE CASCADE,
+    city_id         INTEGER     NOT NULL    REFERENCES cities(id)
+);
+
+CREATE TABLE order_status (
     id          SERIAL      PRIMARY KEY,
-    client_id   INTEGER     NOT NULL    REFERENCES clients(id),
-    city_id     INTEGER     NOT NULL    REFERENCES cities(id)
+    name        TEXT        NOT NULL
+);
+
+CREATE TABLE order_status_log (
+    id          SERIAL                          PRIMARY KEY,
+    order_id    INTEGER                         NOT NULL    REFERENCES orders(id)   ON DELETE CASCADE,
+    status_id   INTEGER                         NOT NULL    REFERENCES order_status(id),
+    timestamp   TIMESTAMP WITHOUT TIME ZONE     NOT NULL    DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE nodes (

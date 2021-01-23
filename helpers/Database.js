@@ -13,7 +13,11 @@ const TABLES = {
     admins:     'admins',
     auth:       'auth',
     clients:    'clients',
-    contactus_messages: 'contactus_messages'
+    contactus_messages: 'contactus_messages',
+    places: 'places',
+    orders: 'orders',
+    nodes: 'nodes',
+    order_status_log: 'order_status_log'
 }
 
 /**
@@ -49,7 +53,7 @@ const builder = () => knex;
  */
 const incubate = async (query, { params = undefined, rowCount = -1 } = {}) => {
     const connection = await connectToDb(DATABASE_NAME);
-
+    
     try {
         const result = await connection.query({ text: query, values: params });
 
@@ -59,10 +63,11 @@ const incubate = async (query, { params = undefined, rowCount = -1 } = {}) => {
 
     } catch (error) {
         console.error(`DB Error ->`, error.message, error.hint || '');
+        //TODO: add permanent logging here
     } finally {
         connection.end();
     }
-
+    
     return false;
 }
 

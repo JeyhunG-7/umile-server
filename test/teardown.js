@@ -1,10 +1,10 @@
 const { builder } = require('./../helpers/Database');
 
-module.exports = async function() {
+module.exports = function () {
     console.log('Closing database connection...');
-    try{
+    try {
         builder().destroy();
-    } catch(e){
+    } catch (e) {
         console.log('Error while closing database connection: ', e);
     }
 }
