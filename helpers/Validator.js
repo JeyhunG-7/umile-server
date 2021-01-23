@@ -18,9 +18,7 @@ const _validator = require('validator');
  * 
  * @returns string if error found, null otherwise
  */
-exports.verifyParams = function (requestBody, requiredParams = undefined) {
-    let errors = {};
-    let atLeastOneError = false;
+const verifyParams = (requestBody, requiredParams = undefined) => {
 
     if (Object.keys(requestBody).length === 0 && requestBody.constructor === Object) {
         return 'Request is empty!';
@@ -29,7 +27,7 @@ exports.verifyParams = function (requestBody, requiredParams = undefined) {
     if (requiredParams) {
         for (const [requiredKey, type] of Object.entries(requiredParams)) {
             if (requestBody[requiredKey] == undefined && type !== 'optional') {
-                return `Request is missing ${requiredKey}!`;
+                return `missing ${requiredKey}`;
             }
         }
     }
@@ -37,60 +35,37 @@ exports.verifyParams = function (requestBody, requiredParams = undefined) {
     for (let [key, value] of Object.entries(requestBody)) {
 
         if (typeof key === "undefined") {
-            return 'Request contains undefined key!';
-        } else if (requiredParams && requiredParams[key]) {
+            return 'contains undefined key';
+        } else if (requiredParams && requiredParams[key] && typeof requiredParams[key] === 'string') {
             let devMessageActual;
-
-            if (typeof requiredParams[key] != 'string') {
-                return 'Specification for required paramaters can only be string, but was ' + typeof requiredParams[key];
-            }
 
             let check = interpretRequirement(requiredParams[key], value);
             let empty = interpretRequirement('empty', value);
 
             if (empty) devMessageActual = 'empty';
 
-            if (!check) {
-                atLeastOneError = true;
+            if (!check) return `${key} has a value of ${devMessageActual || typeof value}, but expected ${requiredParams[key]}`;
 
-                errors[key] = {
-                    "actual": devMessageActual || typeof value,
-                    "expected": requiredParams[key]
-
-                }
-            }
         } else if (requiredParams && typeof requiredParams[key] === "undefined") {
-            atLeastOneError = true;
 
-            errors[key] = {
-                "actual": "some sort",
-                "expected": "nothing"
-            }
+            return `${key} has a value of some sort, but nothing was expected`;
+
+        } else if (requiredParams && requiredParams[key].constructor === Object) {
+
+            const check = verifyParams(value, requiredParams[key]);
+
+            if (check) return `${key} object: ${check}`;
+
         } else if (typeof value === "undefined") {
-            atLeastOneError = true;
 
-            errors[key] = {
-                "actual": "undefined",
-                "expected": ""
-            }
+            return `${key} has a value of undefined`;
         }
-    }
-
-    if (atLeastOneError) {
-        let devMessage = 'Error:';
-
-        for (let [key, value] of Object.entries(errors)) {
-
-            let lastPart = requiredParams ? `, but expected ${value.expected};` : ';'
-
-            devMessage += ` ${key} has a value of ${value.actual}${lastPart}`;
-        }
-
-        return devMessage.substr(0, devMessage.length - 1);
     }
 
     return null;
 }
+
+module.exports = { verifyParams }
 
 /**
  * Interpreter that finds required validator.js method.
@@ -123,15 +98,13 @@ function interpretRequirement(inOption, value) {
         case 'alpha_or_numeric':
             return typeof value === 'string' || (typeof value === 'number' || (typeof value === 'string' && _validator.isNumeric(value)));
         case 'integer':
-            return (typeof value === 'string' && _validator.isInt(value));
+            return (typeof value === 'number' && _validator.isInt(value + ''));
         case 'number':
             return typeof value === 'number' || (typeof value === 'string' && _validator.isNumeric(value));
         case 'string':
             return typeof value === 'string';
         case 'present':
             return typeof value != undefined || (typeof value === 'string' && !_validator.isEmpty(value));
-        case 'object':
-            return typeof value === 'object';
         default:
             return false;
     }

@@ -16,12 +16,22 @@ module.exports = async function() {
         const { incubate } = require('./../helpers/Database');
         const fs = require('fs');
 
-        var query = fs.readFileSync('./database_scripts/create.sql');
-        var result = await incubate(query.toString());
+        const query = fs.readFileSync('./database_scripts/create.sql');
+        const result = await incubate(query.toString());
+
         if (!result){
             console.error("\nERROR: Couldn't create tables in database");
             process.exit();
         }
+
+        const sampleDataQuery = fs.readFileSync('./database_scripts/sample_data.sql');
+        const sampleDataResult = await incubate(sampleDataQuery.toString());
+
+        if (!sampleDataResult){
+            console.error("\nERROR: Couldn't add sample data to created tables");
+            process.exit();
+        }
+
         console.log('Setup database for tests...');
     } catch(e){
         console.error('Something went wrong while setting up database: ', e);
