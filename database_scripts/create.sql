@@ -1,6 +1,7 @@
 -- Clean up database
 
 DROP TABLE IF EXISTS contactus_messages CASCADE;
+DROP TABLE IF EXISTS tariffs CASCADE;
 DROP TABLE IF EXISTS admins CASCADE;
 DROP TABLE IF EXISTS auth CASCADE;
 DROP TABLE IF EXISTS clients CASCADE;
@@ -27,6 +28,13 @@ CREATE TABLE contactus_messages (
     message     TEXT    NOT NULL
 );
 
+CREATE TABLE tariffs (
+    id          SERIAL  PRIMARY KEY,
+    range_min   INTEGER NOT NULL,
+    range_max   INTEGER NOT NULL,
+    cost        REAL    NOT NULL
+);
+
 CREATE TABLE admins (
     email       TEXT    NOT NULL PRIMARY KEY,
     first_name  TEXT    NOT NULL,
@@ -38,23 +46,6 @@ CREATE TABLE auth (
     token_id       TEXT  PRIMARY KEY
 );
 
-CREATE TABLE clients (
-    id              SERIAL  PRIMARY KEY,
-    email           TEXT    NOT NULL UNIQUE,
-    first_name      TEXT    NOT NULL,
-    last_name       TEXT    NOT NULL,
-    phone           TEXT    NOT NULL,
-    company_name    TEXT,
-    pwd_hash        TEXT    NOT NULL
-);
-
-CREATE TABLE cities (
-    id          SERIAL      PRIMARY KEY,
-    name        TEXT        NOT NULL,
-    geom        GEOMETRY    NOT NULL,
-    country     TEXT        NOT NULL
-);
-
 CREATE TABLE places (
     id          SERIAL      PRIMARY KEY,
     provider_id TEXT        NOT NULL    UNIQUE,
@@ -63,6 +54,24 @@ CREATE TABLE places (
     details     TEXT,
     type        TEXT        NOT NULL    DEFAULT 'generic',
     viscosity   REAL        NOT NULL    DEFAULT 3.5
+);
+
+CREATE TABLE clients (
+    id              SERIAL  PRIMARY KEY,
+    email           TEXT    NOT NULL UNIQUE,
+    first_name      TEXT    NOT NULL,
+    last_name       TEXT    NOT NULL,
+    phone           TEXT    NOT NULL,
+    company_name    TEXT,
+    pwd_hash        TEXT    NOT NULL,
+    home_place_id   INTEGER REFERENCES places(id)  
+);
+
+CREATE TABLE cities (
+    id          SERIAL      PRIMARY KEY,
+    name        TEXT        NOT NULL,
+    geom        GEOMETRY    NOT NULL,
+    country     TEXT        NOT NULL
 );
 
 CREATE TABLE distance_matrix (
@@ -87,7 +96,8 @@ CREATE TABLE orders (
 
 CREATE TABLE order_status (
     id          SERIAL      PRIMARY KEY,
-    name        TEXT        NOT NULL
+    name        TEXT        NOT NULL,
+    is_active   BOOLEAN     NOT NULL  --whether something will still happen to this order or its been archived (i.e. Dashboard vs Order History)
 );
 
 CREATE TABLE order_status_log (

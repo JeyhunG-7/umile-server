@@ -7,10 +7,12 @@ const http = require('http');
 
 const SendGrid = require('./../../../helpers/SendGrid');
 
+const Order = require('../../../models/Order')
+
 const { builder, TABLES } = require('./../../../helpers/Database');
 
 describe('Clients API', () => {
-    var server;
+    let server, orderId, placeId1, placeId2;
 
     beforeAll(async (done) => {
         // insert admin
@@ -35,6 +37,7 @@ describe('Clients API', () => {
                 pwd_hash: '$2b$10$2U3Dxk5f.UNffLl9WdTlBeR4vHPiSWamqiNqQs8bvmF8/VnHDhEeS' //test123
             });
 
+        //this is also used for client info testing
         await builder()
             .table(TABLES.clients)
             .insert({
@@ -45,6 +48,28 @@ describe('Clients API', () => {
                 company_name: 'XYZ Company',
                 pwd_hash: '$2b$10$2U3Dxk5f.UNffLl9WdTlBeR4vHPiSWamqiNqQs8bvmF8/VnHDhEeS' //test123
             });
+
+        const placeResult1 = await builder()
+            .table(TABLES.places)
+            .insert({
+                provider_id: 'client_test_1',
+                address: '125 street bla',
+                geom: `0101000000006F8104C5C351C012A5BDC1172E4540`
+            }).returning('id');
+
+        const placeResult2 = await builder()
+            .table(TABLES.places)
+            .insert({
+                provider_id: 'client_test_2',
+                address: '125 avenue bla',
+                geom: `0101000000006F8104C5C351C012A5BDC1172E4540`
+            }).returning('id');
+
+        placeId1 = placeResult1[0];
+        placeId2 = placeResult2[0];
+
+        //For client info balance testing
+        orderId = await Order.placeOrder(2, 1, { note: 'some note for pikcup', placeId: placeId1 }, { note: 'some note for dropoff', placeId: placeId2 }, 5);
 
         server = http.createServer(app);
         server.listen(done)
@@ -61,6 +86,18 @@ describe('Clients API', () => {
         await builder()
             .table(TABLES.admins)
             .where({ email: 'admin@email.com' })
+            .delete();
+
+        //remove places
+        await builder()
+            .table(TABLES.places)
+            .whereIn('provider_id', ['client_test_1', 'client_test_2'])
+            .delete();
+
+        //remove order
+        await builder()
+            .table(TABLES.orders)
+            .where('id', orderId)
             .delete();
 
         server.close(done);
@@ -336,8 +373,186 @@ describe('Clients API', () => {
         done();
     });
 
+    test('GET /home - Missing auth token', async done => {
+
+        const response = await request(server)
+            .get("/api/clients/home");
+
+        expect(response.status).toEqual(200);
+        expect(response.body).toHaveProperty('success', false);
+        expect(response.body).toHaveProperty('message', 'Invalid email or password');
+        done();
+    });
+
+    test('GET /home - Success NULL before setting', async done => {
+        const loginResponse = await request(server)
+            .post("/api/clients/login")
+            .send({
+                username: 'client@email.com',
+                password: 'test123'
+            });
+
+        expect(loginResponse.status).toEqual(200);
+        expect(loginResponse.body).toHaveProperty('success', true);
+        expect(loginResponse.body).toHaveProperty('data');
+
+        const auth_token = loginResponse.body.data;
+
+        const response = await request(server)
+            .get("/api/clients/home")
+            .auth(auth_token, { type: 'bearer' });
+
+        expect(response.status).toEqual(200);
+        expect(response.body).toHaveProperty('success', true);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.data).toBeNull();
+        done();
+    });
+
+    test('POST /home - Missing auth token', async done => {
+
+        const response = await request(server)
+            .post("/api/clients/home")
+            .send({ placeId: placeId2 });
+
+        expect(response.status).toEqual(200);
+        expect(response.body).toHaveProperty('success', false);
+        expect(response.body).toHaveProperty('message', 'Invalid email or password');
+        done();
+    });
+
+    test('POST /home - Success Set Home', async done => {
+        const loginResponse = await request(server)
+            .post("/api/clients/login")
+            .send({
+                username: 'client@email.com',
+                password: 'test123'
+            });
+
+        expect(loginResponse.status).toEqual(200);
+        expect(loginResponse.body).toHaveProperty('success', true);
+        expect(loginResponse.body).toHaveProperty('data');
+
+        const auth_token = loginResponse.body.data;
+
+        const response = await request(server)
+            .post("/api/clients/home")
+            .auth(auth_token, { type: 'bearer' })
+            .send({ placeId: placeId1 });
+
+        expect(response.status).toEqual(200);
+        expect(response.body).toHaveProperty('success', true);
+        expect(response.body).toHaveProperty('data');
+        done();
+    });
+
+    test('GET /home - Success after setting', async done => {
+        const loginResponse = await request(server)
+            .post("/api/clients/login")
+            .send({
+                username: 'client@email.com',
+                password: 'test123'
+            });
+
+        expect(loginResponse.status).toEqual(200);
+        expect(loginResponse.body).toHaveProperty('success', true);
+        expect(loginResponse.body).toHaveProperty('data');
+
+        const auth_token = loginResponse.body.data;
+
+        const response = await request(server)
+            .get("/api/clients/home")
+            .auth(auth_token, { type: 'bearer' });
+
+        expect(response.status).toEqual(200);
+        expect(response.body).toHaveProperty('success', true);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.data).toStrictEqual({ "address": "125 street bla", "id": 1 });
+        done();
+    });
+
+    test('GET /info - Missing auth token', async done => {
+
+        const response = await request(server)
+            .get("/api/clients/info");
+
+        expect(response.status).toEqual(200);
+        expect(response.body).toHaveProperty('success', false);
+        expect(response.body).toHaveProperty('message', 'Invalid email or password');
+        done();
+    });
+
+    test('GET /info - Sucess with some balance', async done => {
+        const loginResponse = await request(server)
+            .post("/api/clients/login")
+            .type('form')
+            .send({
+                username: 'client2@email.com',
+                password: 'test123'
+            })
+            .set('Accept', 'application\\json');
+
+        expect(loginResponse.status).toEqual(200);
+        expect(loginResponse.body).toHaveProperty('success', true);
+        expect(loginResponse.body).toHaveProperty('data');
+
+        const auth_token = loginResponse.body.data;
+
+        const response = await request(server)
+            .get("/api/clients/info")
+            .auth(auth_token, { type: 'bearer' });
+
+        expect(response.status).toEqual(200);
+        expect(response.body).toHaveProperty('success', true);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.data).toStrictEqual({
+            balance: '$9.99',
+            company: 'XYZ Company',
+            email: 'client2@email.com',
+            first_name: 'F',
+            last_name: 'L',
+            phone: '4031111111'
+        });
+
+        done();
+    });
+
+    test('GET /info - Sucess with $0 balance', async done => {
+        const loginResponse = await request(server)
+            .post("/api/clients/login")
+            .type('form')
+            .send({
+                username: 'client@email.com',
+                password: 'test123'
+            })
+            .set('Accept', 'application\\json');
+
+        expect(loginResponse.status).toEqual(200);
+        expect(loginResponse.body).toHaveProperty('success', true);
+        expect(loginResponse.body).toHaveProperty('data');
+
+        const auth_token = loginResponse.body.data;
+
+        const response = await request(server)
+            .get("/api/clients/info")
+            .auth(auth_token, { type: 'bearer' });
+
+        expect(response.status).toEqual(200);
+        expect(response.body).toHaveProperty('success', true);
+        expect(response.body).toHaveProperty('data');
+        expect(response.body.data).toStrictEqual({
+            balance: '$0.00',
+            company: 'XYZ Company',
+            email: 'client@email.com',
+            first_name: 'Fname',
+            last_name: 'Lname',
+            phone: '4031111111'
+        });
+
+        done();
+    });
+
     test.todo('POST /validate - add scenarios');
     test.todo('POST /signup - add scenarios');
     test.todo('POST /forgotpassword - add scenarios');
 });
-
