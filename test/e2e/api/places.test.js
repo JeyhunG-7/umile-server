@@ -12,7 +12,7 @@ describe('Places API', () => {
         await builder()
             .table(TABLES.clients)
             .insert({
-                email: 'client@email.com',
+                email: 'places_client@email.com',
                 first_name: 'Fname',
                 last_name: 'Lname',
                 phone: '4031111111',
@@ -23,7 +23,7 @@ describe('Places API', () => {
         await builder()
             .table(TABLES.places)
             .insert({
-                provider_id: 'id1',
+                provider_id: 'place_test_1',
                 address: '123 street bla',
                 geom: `0101000000462575029A845CC0CB10C7BAB8854940`
             });
@@ -31,7 +31,7 @@ describe('Places API', () => {
         await builder()
             .table(TABLES.places)
             .insert({
-                provider_id: 'id2',
+                provider_id: 'place_test_2',
                 address: '125 street bla',
                 geom: `0101000000006F8104C5C351C012A5BDC1172E4540`
             });
@@ -43,7 +43,7 @@ describe('Places API', () => {
                 .post("/api/clients/login")
                 .type('form')
                 .send({
-                    username: 'client@email.com',
+                    username: 'places_client@email.com',
                     password: 'test123'
                 })
                 .set('Accept', 'application\\json');
@@ -62,11 +62,12 @@ describe('Places API', () => {
         // remove added places and test client
         await builder()
             .table(TABLES.places)
+            .whereIn('provider_id', ['place_test_1', 'place_test_2', 'place_test_3'])
             .delete();
 
         await builder()
             .table(TABLES.clients)
-            .where('email', 'client@email.com')
+            .where('email', 'places_client@email.com')
             .delete();
 
         server.close(done);
@@ -124,7 +125,7 @@ describe('Places API', () => {
             .post("/api/places/save")
             .auth(auth_token, { type: 'bearer' })
             .send({
-                providerId: 'providerId',
+                providerId: 'place_test_3',
                 address: '123 street SW',
                 type: 'some type',
                 lat: 55.7324,
@@ -135,7 +136,7 @@ describe('Places API', () => {
         expect(response.body).toHaveProperty('success', true)
         expect(response.body).toHaveProperty('data')
         expect(typeof response.body.data).toBe('number');
-
+        
         done();
     });
 
@@ -144,7 +145,7 @@ describe('Places API', () => {
         const response = await request(server)
             .post("/api/places/save")
             .send({
-                providerId: 'providerId',
+                providerId: 'place_test_3',
                 address: '123 street SW',
                 type: 'some type',
                 lat: 55.7324,

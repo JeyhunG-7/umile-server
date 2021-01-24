@@ -3,17 +3,16 @@ const ResponseBuilder = require('../helpers/ResponseBuilder');
 const Order = require('../models/Order');
 const Validator = require('../helpers/Validator');
 const { authenticationWith } = require('../models/Authentication');
-const { builder, TABLES } = require('../helpers/Database');
 
 router.get('/list', authenticationWith('jwt-client'), async function (req, res) {
 
-    const validateError = Validator.verifyParams(req.query, { cityId: 'number' });
+    const validateError = Validator.verifyParams(req.query, { cityId: 'number', active: 'boolean' });
     if (validateError) return ResponseBuilder.sendError(req, res, 'Request is missing params!', validateError);
 
-    const { cityId } = req.query;
+    const { cityId, active } = req.query;
     const clientId = req.user.account.id;
 
-    const result = await Order.clientOrders(clientId, cityId);
+    const result = await Order.clientOrders(clientId, cityId, active === 'true');
     if (!result) return ResponseBuilder.sendError(req, res, 'Error while getting list of orders');
 
     return ResponseBuilder.sendSuccess(req, res, result);

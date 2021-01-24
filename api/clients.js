@@ -74,8 +74,8 @@ router.post('/logout', authenticationWith('jwt-client'), async function (req, re
 
 router.post('/forgotpassword', async function (req, res) {
     const validateError = Validator.verifyParams(req.body, {
-        password:   'string',
-        token:      'string',
+        password: 'string',
+        token: 'string',
     });
     if (validateError) return ResponseBuilder.sendError(req, res, 'Request is missing params!', validateError);
 
@@ -103,7 +103,7 @@ router.post('/forgotpassword', async function (req, res) {
 
 router.post('/emailforgotpassword', async function (req, res) {
     const validateError = Validator.verifyParams(req.body, {
-        email:   'email',
+        email: 'email',
     });
     if (validateError) return ResponseBuilder.sendError(req, res, 'Request is missing params!', validateError);
 
@@ -111,28 +111,70 @@ router.post('/emailforgotpassword', async function (req, res) {
 
     var userFacingMessage = `Email will be sent to ${email} if it is registered`;
 
-    try{
+    try {
         var result = await Client.findClientByEmail(email);
         if (result && result.length !== 1) {
             return ResponseBuilder.sendSuccess(req, res, userFacingMessage);
         }
         var user = result[0];
-    } catch (e){
+    } catch (e) {
         logger.error(`Error while getting client by email : ${JSON.stringify(e)}`);
         return ResponseBuilder.sendSuccess(req, res, userFacingMessage);
     }
 
-    var token = createToken({email: email}, '30m');
-    
+    var token = createToken({ email: email }, '30m');
+
     var full_name = `${user.first_name} ${user.last_name}`;
-    if (full_name === '' || full_name.length <= 3){
+    if (full_name === '' || full_name.length <= 3) {
         full_name = email;
     }
 
     var resetLink = `${DOMAIN_NAME}/resetpassword/${token}`;
     SendGrid.sendResetPasswordEmail(email, full_name, resetLink);
-    
+
     return ResponseBuilder.sendSuccess(req, res, userFacingMessage);
+});
+
+router.get('/home', authenticationWith('jwt-client'), async function (req, res) {
+    const clientId = req.user.account.id;
+
+    try {
+        const result = await Client.getHome(clientId);
+
+        return ResponseBuilder.sendSuccess(req, res, result);
+    } catch (error) {
+        logger.error(error.message);
+        return ResponseBuilder.sendError(req, res, 'Error getting client home place id');
+    }
+});
+
+router.post('/home', authenticationWith('jwt-client'), async function (req, res) {
+    const validateError = Validator.verifyParams(req.body, { placeId: 'integer' });
+    if (validateError) return ResponseBuilder.sendError(req, res, 'Request is missing params!', validateError);
+
+    const clientId = req.user.account.id;
+    const { placeId } = req.body;
+
+    try {
+        await Client.setHome(clientId, placeId);
+
+        return ResponseBuilder.sendSuccess(req, res);
+    } catch (error) {
+        logger.error(error.message);
+        return ResponseBuilder.sendError(req, res, 'Error setting client home place id');
+    }
+});
+
+router.get('/info', authenticationWith('jwt-client'), async function (req, res) {
+    const clientId = req.user.account.id;
+
+    try {
+        const result = await Client.getClientInformation(clientId);
+
+        return ResponseBuilder.sendSuccess(req, res, result);
+    } catch {
+        return ResponseBuilder.sendError(req, res, 'Error getting client information');
+    }
 });
 
 function isTokenValid(token) {
