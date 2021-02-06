@@ -1,4 +1,4 @@
-const { builder, TABLES, incubate } = require("./../helpers/Database");
+const { builder, TABLES, incubate, knexPostgis } = require("./../helpers/Database");
 
 
 exports.addClientAsync = function (email, first_name, last_name, company_name, phone, pwd_hash) {
@@ -43,10 +43,18 @@ exports.getHome = clientId => {
             const homePlaceId = home[0].home_place_id;
             if (!homePlaceId) return resolve(null);
 
-            const place = await builder().table(TABLES.places).where('id', homePlaceId).select('address', 'id');
+            const place = await builder().table(TABLES.places).where('id', homePlaceId).select('address', 'id', knexPostgis.asGeoJSON('geom'));
             if (place.length === 0) return resolve(null);
 
-            return resolve(place[0]);
+            let coords = JSON.parse(place[0].geom).coordinates;
+
+            let p = {
+                id: place[0].id,
+                address: place[0].address,
+                lat: coords[1],
+                lng: coords[0]
+            }
+            return resolve(p);
         } catch (error) {
             reject(error);
         }

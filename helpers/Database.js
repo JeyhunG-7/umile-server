@@ -41,6 +41,8 @@ const knex = require('knex')({
     // }
 });
 
+const knexPostgis = require('knex-postgis')(knex);
+
 /**
  * Returns knex query buidler object
  */
@@ -71,7 +73,7 @@ const incubate = async (query, { params = undefined, rowCount = -1 } = {}) => {
     return false;
 }
 
-module.exports = { incubate, builder, TABLES }
+module.exports = { incubate, builder, TABLES, knexPostgis }
 
 const connectToDb = async (database) => {
     let connection;
