@@ -23,7 +23,7 @@ router.post('/place', authenticationWith('jwt-client'), async function (req, res
     const validateError = Validator.verifyParams(req.body, {
         cityId: 'number',
         pickup: { note: 'string', placeId: 'integer' },
-        dropoff: { note: 'string', placeId: 'integer' }
+        dropoff: { note: 'string', placeId: 'integer', customer_name: 'string', customer_phone: 'string' }
     });
 
     if (validateError) return ResponseBuilder.sendError(req, res, 'Request is missing params!', validateError);

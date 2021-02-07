@@ -49,8 +49,6 @@ describe('Orders API', () => {
         orderIds.push(orderId1);
         orderIds.push(orderId2);
 
-        console.log('HEREEEEEE', orderIds);
-
         server = http.createServer(app);
 
         server.listen(async () => {
@@ -133,7 +131,7 @@ describe('Orders API', () => {
         done();
     });
 
-    test('GET orders/place - Success!', async done => {
+    test('POST orders/place - Success!', async done => {
 
         const response = await request(server)
             .post("/api/orders/place")
@@ -141,15 +139,47 @@ describe('Orders API', () => {
             .send({
                 cityId: 1,
                 pickup: { note: 'some note for pikcup', placeId: placeId1 },
-                dropoff: { note: 'some note for dropoff', placeId: placeId2 },
+                dropoff: { note: 'some note for dropoff', placeId: placeId2, customer_name: 'John Doe', customer_phone: '4031111111' },
             })
 
         expect(response.status).toEqual(200);
         expect(response.body).toHaveProperty('success', true);
-        expect(response.body).toHaveProperty('success', true);
         expect(typeof response.body.data).toBe('number');
 
         orderIds.push(response.body.data);
+
+        done();
+    });
+
+    test.each([
+        ['Missing drop off info', { 
+            cityId: 1,
+            pickup: { note: 'some note for pikcup', placeId: placeId1 },
+        }],
+        ['Missing Pick up info', { 
+            cityId: 1,
+            dropoff: { note: 'some note for dropoff', placeId: placeId2, customer_name: 'John Doe', customer_phone: '4031111111' }
+        }],
+        ['Missing customer info', { 
+            cityId: 1,
+            pickup: { note: 'some note for pikcup', placeId: placeId1 },
+            dropoff: { note: 'some note for dropoff', placeId: placeId2, customer_name: 'John Doe' }
+        }],
+        ['Missing cityId', { 
+            pickup: { note: 'some note for pikcup', placeId: placeId1 },
+            dropoff: { note: 'some note for dropoff', placeId: placeId2, customer_name: 'John Doe', customer_phone: '4031111111' }
+        }]
+    ])
+        ('POST orders/place - %s', async (textName, data, done) => {
+
+        const response = await request(server)
+            .post("/api/orders/place")
+            .auth(auth_token, { type: 'bearer' })
+            .send(data)
+
+        expect(response.status).toEqual(200);
+        expect(response.body).toHaveProperty('success', false);
+        expect(response.body.message).toBe("Request is missing params!");
 
         done();
     });
