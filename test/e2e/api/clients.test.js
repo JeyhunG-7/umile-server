@@ -467,7 +467,7 @@ describe('Clients API', () => {
         expect(response.status).toEqual(200);
         expect(response.body).toHaveProperty('success', true);
         expect(response.body).toHaveProperty('data');
-        expect(response.body.data).toStrictEqual({ "address": "125 street bla", "id": 1 });
+        expect(response.body.data).toStrictEqual({ "address": "125 street bla", "id": 1, "lat": 42.3601, "lng": -71.0589 });
         done();
     });
 
