@@ -152,37 +152,37 @@ describe('Orders API', () => {
     });
 
     test.each([
-        ['Missing drop off info', { 
+        ['Missing drop off info', {
             cityId: 1,
             pickup: { note: 'some note for pikcup', placeId: placeId1 },
         }],
-        ['Missing Pick up info', { 
+        ['Missing Pick up info', {
             cityId: 1,
             dropoff: { note: 'some note for dropoff', placeId: placeId2, customer_name: 'John Doe', customer_phone: '4031111111' }
         }],
-        ['Missing customer info', { 
+        ['Missing customer info', {
             cityId: 1,
             pickup: { note: 'some note for pikcup', placeId: placeId1 },
             dropoff: { note: 'some note for dropoff', placeId: placeId2, customer_name: 'John Doe' }
         }],
-        ['Missing cityId', { 
+        ['Missing cityId', {
             pickup: { note: 'some note for pikcup', placeId: placeId1 },
             dropoff: { note: 'some note for dropoff', placeId: placeId2, customer_name: 'John Doe', customer_phone: '4031111111' }
         }]
     ])
         ('POST orders/place - %s', async (textName, data, done) => {
 
-        const response = await request(server)
-            .post("/api/orders/place")
-            .auth(auth_token, { type: 'bearer' })
-            .send(data)
+            const response = await request(server)
+                .post("/api/orders/place")
+                .auth(auth_token, { type: 'bearer' })
+                .send(data)
 
-        expect(response.status).toEqual(200);
-        expect(response.body).toHaveProperty('success', false);
-        expect(response.body.message).toBe("Request is missing params!");
+            expect(response.status).toEqual(200);
+            expect(response.body).toHaveProperty('success', false);
+            expect(response.body.message).toBe("Request is missing params!");
 
-        done();
-    });
+            done();
+        });
 
     test('GET orders/place - Missing auth token', async done => {
 
@@ -200,7 +200,7 @@ describe('Orders API', () => {
         done();
     });
 
-    test('GET orders/place - Non existant place id', async done => {
+    test('POST orders/place - Non existant place id', async done => {
 
         const response = await request(server)
             .post("/api/orders/place")
@@ -213,6 +213,123 @@ describe('Orders API', () => {
 
         expect(response.status).toEqual(200);
         expect(response.body).toHaveProperty('success', false);
+        done();
+    });
+
+    test('GET orders/delete - Missing params', async done => {
+
+        const response = await request(server)
+            .get("/api/orders/delete")
+            .auth(auth_token, { type: 'bearer' })
+
+        expect(response.status).toEqual(200);
+        expect(response.body).toHaveProperty('success', false);
+        expect(response.body.message).toBe("Request is missing params!");
+        done();
+    });
+
+    test('GET orders/delete - Missing auth', async done => {
+
+        const response = await request(server)
+            .get("/api/orders/delete")
+
+        expect(response.status).toEqual(200);
+        expect(response.body).toHaveProperty('success', false);
+        expect(response.body.message).toBe("Invalid email or password");
+        done();
+    });
+
+    test('GET orders/delete - Wrong order id', async done => {
+
+        const response = await request(server)
+            .get("/api/orders/delete")
+            .auth(auth_token, { type: 'bearer' })
+            .query({ orderId: 100001 })
+
+        expect(response.status).toEqual(200);
+        expect(response.body).toHaveProperty('success', false);
+        expect(response.body.message).toBe("Error while deleting order");
+
+        done();
+    });
+
+    test('GET orders/delete - Success', async done => {
+
+        const response = await request(server)
+            .get("/api/orders/delete")
+            .auth(auth_token, { type: 'bearer' })
+            .query({ orderId: orderIds[0] })
+
+        expect(response.status).toEqual(200);
+        expect(response.body).toHaveProperty('success', true);
+
+        if (response.body.success) orderIds.shift();
+
+        done();
+    });
+
+    test('POST orders/status - Missing params', async done => {
+
+        const response = await request(server)
+            .post("/api/orders/status")
+            .auth(auth_token, { type: 'bearer' })
+
+        expect(response.status).toEqual(200);
+        expect(response.body).toHaveProperty('success', false);
+        expect(response.body.message).toBe("Request is missing params!");
+
+        done();
+    });
+
+    test('POST orders/status - Missing auth params', async done => {
+
+        const response = await request(server)
+            .post("/api/orders/status")
+
+        expect(response.status).toEqual(200);
+        expect(response.body).toHaveProperty('success', false);
+        expect(response.body.message).toBe("Invalid email or password");
+
+        done();
+    });
+
+    test('POST orders/status - Wrong order id', async done => {
+
+        const response = await request(server)
+            .post("/api/orders/status")
+            .auth(auth_token, { type: 'bearer' })
+            .send({ orderId: 100001, submit: true })
+
+        expect(response.status).toEqual(200);
+        expect(response.body).toHaveProperty('success', false);
+        expect(response.body.message).toBe("Error while updating order status");
+
+        done();
+    });
+
+    test('POST orders/status - Success submit', async done => {
+
+        const response = await request(server)
+            .post("/api/orders/status")
+            .auth(auth_token, { type: 'bearer' })
+            .send({ orderId: orderIds[0], submit: true })
+
+        expect(response.status).toEqual(200);
+        expect(response.body).toHaveProperty('success', true);
+
+        done();
+    });
+
+    test('POST orders/status - Success unsubmit', async done => {
+
+        const response = await request(server)
+            .post("/api/orders/status")
+            .auth(auth_token, { type: 'bearer' })
+            .send({ orderId: orderIds[0], submit: false })
+
+        expect(response.status).toEqual(200);
+        expect(response.body).toHaveProperty('success', true);
+
         done();
     });
 });
