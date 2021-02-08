@@ -82,4 +82,48 @@ const placeOrder = async (clientId, cityId, pickup, dropoff, statusId = 1) => {
     }
 }
 
-module.exports = { clientOrders, placeOrder }
+const deleteOrderById = function (clientId, orderId) {
+    return new Promise(async (resolve) => {
+
+        try {
+            const clientOrder = await builder().table(TABLES.orders).where({ id: orderId, client_id: clientId }).select('id');
+
+            if (!clientOrder || clientOrder.length === 0) return resolve(false);
+
+            const result = await builder().table(TABLES.orders).where({ id: orderId, client_id: clientId }).del();
+
+            if (!result) return resolve(false);
+
+            return resolve(true);
+
+        } catch (error) {
+            console.error(error);
+            logger.error(`Order.deleteOrderById(), ${error.message}`);
+            resolve(false);
+        }
+    });
+}
+
+const updateOrderStatusById = function (clientId, orderId, statusId) {
+    return new Promise(async (resolve) => {
+
+        try {
+            const clientOrder = await builder().table(TABLES.orders).where({ id: orderId, client_id: clientId }).select('id');
+
+            if (!clientOrder || clientOrder.length === 0) return resolve(false);
+
+            const result = await builder().table(TABLES.order_status_log).insert({ order_id: orderId, status_id: statusId });
+
+            if (!result) return resolve(false);
+
+            return resolve(true);
+
+        } catch (error) {
+            console.error(error);
+            logger.error(`Order.updateOrderStatusById(), ${error.message}`);
+            resolve(false);
+        }
+    });
+}
+
+module.exports = { clientOrders, placeOrder, deleteOrderById, updateOrderStatusById }
