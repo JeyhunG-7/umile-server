@@ -68,7 +68,7 @@ const placeOrder = async (clientId, cityId, pickup, dropoff, statusId = 1) => {
 
         await builder().table(TABLES.nodes).insert(pickupObj);
 
-        const dropoffObj = { order_id: orderId, action_id: 2, place_id: dropoff.placeId, note: dropoff.note }
+        const dropoffObj = { order_id: orderId, action_id: 2, place_id: dropoff.placeId, note: dropoff.note, customer_name: dropoff.customer_name, customer_phone: dropoff.customer_phone }
 
         await builder().table(TABLES.nodes).insert(dropoffObj);
 

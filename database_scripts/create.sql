@@ -108,11 +108,13 @@ CREATE TABLE order_status_log (
 );
 
 CREATE TABLE nodes (
-    id          SERIAL      PRIMARY KEY,
-    order_id    INTEGER     NOT NULL    REFERENCES orders(id)   ON DELETE CASCADE,
-    action_id   INTEGER     NOT NULL    REFERENCES actions(id),
-    place_id    INTEGER     NOT NULL    REFERENCES places(id),
-    note        TEXT
+    id              SERIAL      PRIMARY KEY,
+    order_id        INTEGER     NOT NULL    REFERENCES orders(id)   ON DELETE CASCADE,
+    action_id       INTEGER     NOT NULL    REFERENCES actions(id),
+    place_id        INTEGER     NOT NULL    REFERENCES places(id),
+    note            TEXT,
+    customer_name   TEXT,
+    customer_phone  TEXT
 );
 
 CREATE TABLE routes (
