@@ -38,14 +38,14 @@ router.post('/place', authenticationWith('jwt-client'), async function (req, res
     return ResponseBuilder.sendError(req, res, 'Error while placing order');
 });
 
-router.get('/delete', authenticationWith('jwt-client'), async function (req, res) {
+router.post('/delete', authenticationWith('jwt-client'), async function (req, res) {
 
-    const validateError = Validator.verifyParams(req.query, { orderId: 'number' });
+    const validateError = Validator.verifyParams(req.body, { orderId: 'number' });
     if (validateError) return ResponseBuilder.sendError(req, res, 'Request is missing params!', validateError);
 
     const clientId = req.user.account.id;
 
-    const { orderId } = req.query;
+    const { orderId } = req.body;
 
     const result = await Order.deleteOrderById(clientId, orderId);
     if (result) return ResponseBuilder.sendSuccess(req, res);
