@@ -216,10 +216,10 @@ describe('Orders API', () => {
         done();
     });
 
-    test('GET orders/delete - Missing params', async done => {
+    test('POST orders/delete - Missing params', async done => {
 
         const response = await request(server)
-            .get("/api/orders/delete")
+            .post("/api/orders/delete")
             .auth(auth_token, { type: 'bearer' })
 
         expect(response.status).toEqual(200);
@@ -228,10 +228,10 @@ describe('Orders API', () => {
         done();
     });
 
-    test('GET orders/delete - Missing auth', async done => {
+    test('POST orders/delete - Missing auth', async done => {
 
         const response = await request(server)
-            .get("/api/orders/delete")
+            .post("/api/orders/delete")
 
         expect(response.status).toEqual(200);
         expect(response.body).toHaveProperty('success', false);
@@ -239,12 +239,12 @@ describe('Orders API', () => {
         done();
     });
 
-    test('GET orders/delete - Wrong order id', async done => {
+    test('POST orders/delete - Wrong order id', async done => {
 
         const response = await request(server)
-            .get("/api/orders/delete")
+            .post("/api/orders/delete")
             .auth(auth_token, { type: 'bearer' })
-            .query({ orderId: 100001 })
+            .send({ orderId: 100001 })
 
         expect(response.status).toEqual(200);
         expect(response.body).toHaveProperty('success', false);
@@ -253,12 +253,12 @@ describe('Orders API', () => {
         done();
     });
 
-    test('GET orders/delete - Success', async done => {
+    test('POST orders/delete - Success', async done => {
 
         const response = await request(server)
-            .get("/api/orders/delete")
+            .post("/api/orders/delete")
             .auth(auth_token, { type: 'bearer' })
-            .query({ orderId: orderIds[0] })
+            .send({ orderId: orderIds[0] })
 
         expect(response.status).toEqual(200);
         expect(response.body).toHaveProperty('success', true);
