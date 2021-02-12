@@ -4,7 +4,7 @@ const { logout, authenticationWith } = require('../models/Authentication');
 const Validator = require('../helpers/Validator');
 const { createToken } = require('../helpers/Token');
 const { sendSignupEmail } = require('./../helpers/SendGrid');
-const { DOMAIN_NAME } = require('./../helpers/Constants');
+const { DASHBOARD_DOMAIN_NAME } = require('./../helpers/Constants');
 
 
 router.post('/login', authenticationWith('admin-local'), function (req, res) {
@@ -24,7 +24,7 @@ router.post('/createinvitation', authenticationWith('jwt-admin'), async function
     var token = createToken({email: email, first_name: first_name});
 
     //TODO: create invitation link?
-    var reply = await sendSignupEmail(email, first_name, `${DOMAIN_NAME}/signup/${token}`);
+    var reply = await sendSignupEmail(email, first_name, `${DASHBOARD_DOMAIN_NAME}/signup/${token}`);
      
     return reply ? ResponseBuilder.sendSuccess(req, res) : ResponseBuilder.sendError(req, res, "Error while creating signup email");
 });

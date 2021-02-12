@@ -1,5 +1,6 @@
 const pg = require('pg');
 const Client = pg.Client;
+const { Log } = require('./Logger'), logger = new Log('Database');
 
 const DATABASE_NAME = process.env.DB_NAME
 
@@ -33,12 +34,20 @@ const TABLES = {
 const knex = require('knex')({
     client: 'pg',
     connection: { ..._pgSettings, database: DATABASE_NAME },
-    // log: {  TODO: after logger set connect these logs to Logger
-    //     warn(message) { },
-    //     error(message) { },
-    //     deprecate(message) { },
-    //     debug(message) { }
-    // }
+    log: {
+        warn(message) {
+            logger.warn(message);
+         },
+        error(message) { 
+            logger.error(message);
+        },
+        deprecate(message) { 
+            logger.info(message);
+        },
+        debug(message) { 
+            logger.debug(message);
+        }
+    }
 });
 
 const knexPostgis = require('knex-postgis')(knex);
@@ -64,8 +73,7 @@ const incubate = async (query, { params = undefined, rowCount = -1 } = {}) => {
         }
 
     } catch (error) {
-        console.error(`DB Error ->`, error.message, error.hint || '');
-        //TODO: add permanent logging here
+        logger.error(`DB Error ->`, error.message, error.hint || '');
     } finally {
         connection.end();
     }
@@ -85,10 +93,10 @@ const connectToDb = async (database) => {
 
         connection.connect((err) => {
             if (err) {
-                console.error('Error while connecting to', database, err.stack);
+                logger.error('Error while connecting to', database, err.stack);
                 process.exit(1);
             } else {
-                // console.debug('Connected to 127.0.0.1', database);
+                logger.debug('Connected to 127.0.0.1', database);
                 resolve(connection);
             }
         });
