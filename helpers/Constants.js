@@ -1,3 +1,3 @@
-const DOMAIN_NAME = process.env.NODE_ENV === 'production' ? 'https://umile.xyz' : 'http://localhost:3000';
+const DASHBOARD_DOMAIN_NAME = process.env.NODE_ENV === 'production' ? 'https://dashboard.umile.xyz' : 'http://localhost:3000';
 
-module.exports = {DOMAIN_NAME}
+module.exports = {DASHBOARD_DOMAIN_NAME}

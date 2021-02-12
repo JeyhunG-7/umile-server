@@ -6,7 +6,7 @@ const Password = require('../helpers/Password');
 const Client = require('../models/Client');
 const { logout, authenticationWith } = require('../models/Authentication');
 const SendGrid = require('./../helpers/SendGrid');
-const { DOMAIN_NAME } = require('./../helpers/Constants');
+const { DASHBOARD_DOMAIN_NAME } = require('./../helpers/Constants');
 
 const { Log } = require('./../helpers/Logger'),
     logger = new Log('ClientsAPI');
@@ -129,7 +129,7 @@ router.post('/emailforgotpassword', async function (req, res) {
         full_name = email;
     }
 
-    var resetLink = `${DOMAIN_NAME}/resetpassword/${token}`;
+    var resetLink = `${DASHBOARD_DOMAIN_NAME}/resetpassword/${token}`;
     SendGrid.sendResetPasswordEmail(email, full_name, resetLink);
 
     return ResponseBuilder.sendSuccess(req, res, userFacingMessage);
