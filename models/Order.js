@@ -25,6 +25,7 @@ const clientOrders = async (clientId, cityId, active) => {
         SELECT nodes.order_id, array_agg(json_build_object(
                 'address', places.address,
                 'note', nodes.note,
+                'customerName', nodes.customer_name,
                 'placeId', places.id
             ))
         FROM nodes

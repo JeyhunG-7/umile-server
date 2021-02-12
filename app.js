@@ -18,5 +18,6 @@ app.use(expressLogger);
 
 //API endpoints
 app.use(`/api/`, require('./api/init'));
+// app.use(`/`, require('./api/init')); //For Chingiz's local setup
 
 exports.app = app;
