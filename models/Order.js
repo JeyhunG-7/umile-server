@@ -36,16 +36,16 @@ const clientOrders = async (clientId, cityId, active) => {
     ON dropoffs.order_id=orders.id
     INNER JOIN (
         SELECT order_id, array_agg(json_build_object(
-                'timestamp', osl.timestamp,
+                'id', os.id,
                 'value', os.name,
-                'id', os.id
+                'timestamp', osl.timestamp,
+                'is_active', os.is_active
             ) ORDER BY osl.timestamp DESC)
         FROM order_status_log osl
         INNER JOIN order_status os ON os.id=osl.status_id
-        WHERE os.is_active=$3
         GROUP BY 1
     ) AS sts ON sts.order_id=orders.id
-    WHERE orders.client_id=$1 AND orders.city_id=$2;`
+    WHERE orders.client_id=$1 AND orders.city_id=$2 AND bool((sts.array_agg)[1]->>'is_active')=$3;`
 
     return await incubate(query, { params: [clientId, cityId, active], rowCount: -1 });
 }
