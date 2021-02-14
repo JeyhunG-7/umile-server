@@ -91,7 +91,8 @@ CREATE TABLE actions (
 CREATE TABLE orders (
     id              SERIAL      PRIMARY KEY,
     client_id       INTEGER     NOT NULL    REFERENCES clients(id)  ON DELETE CASCADE,
-    city_id         INTEGER     NOT NULL    REFERENCES cities(id)
+    city_id         INTEGER     NOT NULL    REFERENCES cities(id),
+    received_date   TIMESTAMP WITHOUT TIME ZONE     NOT NULL    DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE order_status (

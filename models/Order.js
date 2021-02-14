@@ -5,7 +5,7 @@ const clientOrders = async (clientId, cityId, active) => {
 
     const query = `
    SELECT	 
-        orders.id, (sts.array_agg)[1] AS status,
+        orders.id, orders.received_date, (sts.array_agg)[1] AS status,
         (pickups.array_agg)[1] AS pickup,
         (dropoffs.array_agg)[1] AS dropoff
     FROM orders
