@@ -56,7 +56,9 @@ router.post('/validate', function (req, res) {
     const validateError = Validator.verifyParams(req.body, { token: 'string' });
     if (validateError) return ResponseBuilder.sendError(req, res, 'Request is missing params!', validateError);
 
-    return isTokenValid(req.body.token) ? ResponseBuilder.sendSuccess(req, res) : ResponseBuilder.sendError(req, res);
+    var token = isTokenValid(req.body.token);
+
+    return token ? ResponseBuilder.sendSuccess(req, res, { email: token.email }) : ResponseBuilder.sendError(req, res);
 });
 
 router.post('/login', authenticationWith('client-local'), function (req, res) {
@@ -189,7 +191,6 @@ function isTokenValid(token) {
     } catch (e) {
         return false;
     }
-
 }
 
 module.exports = router;
