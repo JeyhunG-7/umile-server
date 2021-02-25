@@ -11,6 +11,10 @@ router.post('/login', authenticationWith('admin-local'), function (req, res) {
     return ResponseBuilder.sendSuccess(req, res, req.user.token);
 });
 
+router.get('/login', authenticationWith('jwt-admin'), function (req, res) {
+    return ResponseBuilder.sendSuccess(req, res);
+});
+
 router.post('/logout', authenticationWith('jwt-admin'), async function (req, res) {
     await logout(req.user.id);
     return ResponseBuilder.sendSuccess(req, res);
