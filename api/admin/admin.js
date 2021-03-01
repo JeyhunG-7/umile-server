@@ -1,10 +1,10 @@
 const router = require('express').Router();
-const ResponseBuilder = require('../helpers/ResponseBuilder');
-const { logout, authenticationWith } = require('../models/Authentication');
-const Validator = require('../helpers/Validator');
-const { createToken } = require('../helpers/Token');
-const { sendSignupEmail } = require('./../helpers/SendGrid');
-const { DASHBOARD_DOMAIN_NAME } = require('./../helpers/Constants');
+const ResponseBuilder = require('../../helpers/ResponseBuilder');
+const { logout, authenticationWith } = require('../../models/Authentication');
+const Validator = require('../../helpers/Validator');
+const { createToken } = require('../../helpers/Token');
+const { sendSignupEmail } = require('../../helpers/SendGrid');
+const { DASHBOARD_DOMAIN_NAME } = require('../../helpers/Constants');
 
 
 router.post('/login', authenticationWith('admin-local'), function (req, res) {
@@ -32,5 +32,7 @@ router.post('/createinvitation', authenticationWith('jwt-admin'), async function
      
     return reply ? ResponseBuilder.sendSuccess(req, res) : ResponseBuilder.sendError(req, res, "Error while creating signup email");
 });
+
+router.use(`/orders/`, authenticationWith('jwt-admin'), require('./orders'));
 
 module.exports = router;
