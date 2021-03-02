@@ -18,7 +18,8 @@ const TABLES = {
     places: 'places',
     orders: 'orders',
     nodes: 'nodes',
-    order_status_log: 'order_status_log'
+    order_status_log: 'order_status_log',
+    order_status: 'order_status'
 }
 
 /**

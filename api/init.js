@@ -1,6 +1,6 @@
 const api = require('express')();
 
-api.use(`/admin/`, require('./admin'));
+api.use(`/admin/`, require('./admin/admin'));
 api.use(`/clients/`, require('./clients'));
 api.use(`/model/`, require('./model'));
 api.use(`/places/`, require('./places'));
